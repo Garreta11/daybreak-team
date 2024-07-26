@@ -12,6 +12,7 @@
     "dat.gui": "^0.7.9",
     "glslify": "^7.1.1",
     "glslify-loader": "^2.0.0",
+    "gsap": "^3.12.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-scripts": "5.0.1",

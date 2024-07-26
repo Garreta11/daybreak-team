@@ -31,21 +31,6 @@ const fragmentShader = glsl`
   }
 
   void main() {  
-    /* vec2 uv = vUv;
-  
-    vec4 textureColor = texture2D(uTexture, uv);
-  
-    // Convert the texture color to grayscale
-    float gray = dot(textureColor.rgb, vec3(0.299, 0.587, 0.114));
-  
-    // Map the grayscale value to the color array using the blend function
-    // vec3 blendedColor = blendColors(vec3(gray), gray);
-  
-    float t = dot(textureColor.rgb, vec3(0.299, 0.587, 0.114)); // This can be adjusted for a different mapping
-    // Blend colors using the mapped value
-    vec3 blendedColor = blendColors(textureColor.rgb, t);
-  
-    gl_FragColor = vec4(blendedColor, textureColor.a); */
 
     vec2 p = vPosition.xy;
     float len = length(p);
@@ -53,11 +38,11 @@ const fragmentShader = glsl`
     float delta = (sin(mod(time, uDuration) * (2.0 * PI / uDuration) + 1.0) / 2.0);
 
     vec2 uv = mix(ripple, vUv, delta);
-    vec4 textureColor = texture2D(uTexture, uv);
+    vec4 textureColor = texture2D(uTexture, vUv);
 
     float gray = dot(textureColor.rgb, vec3(0.299, 0.587, 0.114));
-    float t = dot(textureColor.rgb, vec3(0.299, 0.587, 0.114)); // This can be adjusted for a different mapping
-    vec3 blendedColor = blendColors(textureColor.rgb, t);
+    vec3 blendedColor = blendColors(textureColor.rgb, gray);
+
 
     gl_FragColor = vec4(blendedColor, textureColor.a);
 

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import * as dat from 'dat.gui';
+import { GUI } from 'dat.gui';
+
+import gsap from 'gsap';
 
 // components
 import { createPlane } from './components/plane';
@@ -9,11 +11,10 @@ const Webgl = () => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    // Dat.GUI
-    const gui = new dat.GUI();
-
     // Scene
     const scene = new THREE.Scene();
+
+    const app = document.querySelector('#app');
 
     // Camera
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
@@ -22,19 +23,43 @@ const Webgl = () => {
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(app.offsetWidth, app.offsetHeight);
     canvasRef.current.appendChild(renderer.domElement);
 
     // Plane Geometry
-    const plane = createPlane();
+    const plane = createPlane(renderer);
     scene.add(plane.mesh);
+
+    // Dat.GUI
+    const gui = new GUI();
+    let dir = true;
+    var obj = {
+      play: function () {
+        gsap.fromTo(
+          plane.mesh.material.uniforms.uOffset,
+          {
+            value: dir ? 0 : 1,
+          },
+          {
+            value: dir ? 1 : 0,
+            ease: 'power.out',
+            duration: 1,
+            onComplete: () => {
+              dir = !dir;
+            },
+          }
+        );
+      },
+    };
+    gui.add(plane.mesh.material.uniforms.uOffset, 'value', 0, 1);
+    gui.add(obj, 'play');
 
     // Animation
     const animate = () => {
       requestAnimationFrame(animate);
 
       if (plane) {
-        plane.mesh.material.uniforms.time.value += 0.01;
+        //plane.mesh.material.uniforms.time.value += 0.01;
       }
 
       renderer.render(scene, camera);
@@ -43,24 +68,6 @@ const Webgl = () => {
 
     // Handle window resize
     const handleResize = () => {
-      const imageAspect = 1186 / 1353;
-
-      let a1;
-      let a2;
-
-      if (window.innerHeight / window.innerWidth > imageAspect) {
-        a1 = (window.innerWidth / window.innerHeight) * imageAspect;
-        a2 = 1;
-      } else {
-        a1 = 1;
-        a2 = window.innerHeight / window.innerWidth / imageAspect;
-      }
-
-      plane.material.uniforms.resolution.value.x = window.innerWidth;
-      plane.material.uniforms.resolution.value.y = window.innerHeight;
-      plane.material.uniforms.resolution.value.z = a1;
-      plane.material.uniforms.resolution.value.w = a2;
-
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);

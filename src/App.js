@@ -5,7 +5,7 @@ import Webgl from './components/Webgl/Webgl';
 
 function App() {
   return (
-    <div className='App'>
+    <div className='App' id='app'>
       <Webgl />
     </div>
   );
