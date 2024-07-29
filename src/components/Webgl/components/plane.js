@@ -1,17 +1,12 @@
 import * as THREE from 'three';
-
+import React, { useContext } from 'react';
 import { getCoverUV } from '../../../utils/three.js';
-
-// images
-import img from '../../../man.png';
-import img2 from '../../../man2.png';
-import displacementMap from '../../../displacement-map.jpg';
 
 // shaders
 import vertex from '../../../shaders/vertex.js';
 import fragment from '../../../shaders/fragmentDisplacement.js';
 
-const createPlane = (renderer) => {
+const createPlane = (renderer, imgs) => {
   const colorsArray = [
     new THREE.Color(0xff0000), // Red
     new THREE.Color(0x00ff00), // Green
@@ -22,11 +17,12 @@ const createPlane = (renderer) => {
 
   const colors = colorsArray.map((color) => color.toArray()).flat();
 
-  const planeGeometry = new THREE.PlaneGeometry(2, 3.28);
+  const planeGeometry = new THREE.PlaneGeometry(2, 2);
 
-  const texture = new THREE.TextureLoader().load(img);
-  const texture2 = new THREE.TextureLoader().load(img2);
-  const displacementTexture = new THREE.TextureLoader().load(displacementMap);
+  const textures = [];
+  imgs.forEach((img, i) => {
+    textures[i] = new THREE.TextureLoader().load(img.src);
+  });
 
   const uvCover1 = getCoverUV(renderer);
   const uvCover2 = getCoverUV(renderer);
@@ -37,10 +33,11 @@ const createPlane = (renderer) => {
     },
     uniforms: {
       time: { value: 0.0 },
-      uTexture1: { value: texture },
-      uTexture2: { value: texture2 },
+      uTexture1: { value: textures[0] },
+      uTexture2: { value: textures[1] },
 
       uOffset: { value: 0.0 },
+      uNoise: { value: 3.0 },
 
       uDuration: { value: 8.0 },
       resolution: { value: new THREE.Vector4() },
@@ -50,7 +47,6 @@ const createPlane = (renderer) => {
       uvOffset1: { value: uvCover1.offset },
       uvRepeat2: { value: uvCover2.repeat },
       uvOffset2: { value: uvCover2.offset },
-      uDisplacementTexture: { value: displacementTexture },
     },
     vertexShader: vertex,
     fragmentShader: fragment,
@@ -58,7 +54,6 @@ const createPlane = (renderer) => {
   });
 
   const mesh = new THREE.Mesh(planeGeometry, material);
-  mesh.scale.set(0.5, 0.5, 0.5);
 
   return { mesh };
 };

@@ -1,0 +1,14 @@
+.images {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  &__item {
+    cursor: pointer;
+    width: 100px;
+  }
+
+}

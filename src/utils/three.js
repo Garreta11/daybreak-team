@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export function getCoverUV(renderer) {
   // crop image like a "background: cover"
   const canvas = renderer.domElement;
-  const aspectOfScene = canvas.offsetWidth / canvas.offsetHeight;
+  const aspectOfScene = 1;
   const aspectOfImage = 1;
 
   const repeat = new THREE.Vector2();
