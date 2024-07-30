@@ -10,6 +10,7 @@ import gsap from 'gsap';
 import { createPlane } from './components/plane';
 
 const Webgl = ({ imgs }) => {
+  const [dir, setDir] = useState(false);
   const canvasRef = useRef(null);
   const [planeImage, setPlaneImage] = useState(null);
 
@@ -42,43 +43,12 @@ const Webgl = ({ imgs }) => {
 
     // Dat.GUI
     const gui = new GUI();
-    let dir = true;
-    var obj = {
-      play: function () {
-        gsap.fromTo(
-          plane.mesh.material.uniforms.uOffset,
-          {
-            value: dir ? 0 : 1,
-          },
-          {
-            value: dir ? 1 : 0,
-            ease: 'none',
-            duration: 1,
-            onComplete: () => {
-              dir = !dir;
-            },
-          }
-        );
-        /* gsap.fromTo(
-          plane.mesh.material.uniforms.uNoise,
-          {
-            value: dir ? 0 : 1,
-          },
-          {
-            value: dir ? 1 : 0,
-            ease: 'none',
-            duration: 1,
-          }
-        ); */
-      },
-    };
     gui
       .add(plane.mesh.material.uniforms.uNoise, 'value')
       .min(1)
       .max(10)
       .name('Noise');
     gui.add(plane.mesh.material.uniforms.uOffset, 'value', 0, 1).name('Offset');
-    gui.add(obj, 'play');
 
     // Animation
     const animate = () => {
@@ -109,8 +79,27 @@ const Webgl = ({ imgs }) => {
   }, []);
 
   const handleImage = (src, index) => {
-    console.log(index, src);
-    console.log(planeImage.mesh);
+    const t = new THREE.TextureLoader().load(src);
+    if (dir) {
+      planeImage.mesh.material.uniforms.uTexture1.value = t;
+    } else {
+      planeImage.mesh.material.uniforms.uTexture2.value = t;
+    }
+
+    gsap.fromTo(
+      planeImage.mesh.material.uniforms.uOffset,
+      {
+        value: dir ? 1 : 0,
+      },
+      {
+        value: dir ? 0 : 1,
+        ease: 'power1.in',
+        duration: 1,
+        onComplete() {
+          setDir(!dir);
+        },
+      }
+    );
   };
 
   return (
@@ -119,13 +108,14 @@ const Webgl = ({ imgs }) => {
       <div className={styles.images}>
         {imgs.map((img, index) => {
           return (
-            <img
-              onClick={() => handleImage(img.src, index)}
-              className={styles.images__item}
-              key={index}
-              src={img.src}
-              alt={index}
-            />
+            <div key={index} className={styles.images__item}>
+              <img
+                onClick={() => handleImage(img.src, index)}
+                className={styles.images__item__img}
+                src={img.src}
+                alt={index}
+              />
+            </div>
           );
         })}
       </div>

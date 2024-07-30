@@ -2,7 +2,6 @@ import React from 'react';
 
 import './App.scss';
 import Webgl from './components/Webgl/Webgl';
-import Images from './components/Images/Images';
 
 function App() {
   const images = [
@@ -20,7 +19,6 @@ function App() {
   return (
     <div className='App' id='app'>
       <Webgl imgs={images} />
-      {/* <Images imgs={images} /> */}
     </div>
   );
 }

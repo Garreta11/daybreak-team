@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import React, { useContext } from 'react';
 import { getCoverUV } from '../../../utils/three.js';
 
 // shaders
@@ -15,7 +14,8 @@ const createPlane = (renderer, imgs) => {
     new THREE.Color(0xff00ff), // Magenta
   ];
 
-  const colors = colorsArray.map((color) => color.toArray()).flat();
+  // const colors = colorsArray.map((color) => color.toArray()).flat();
+  // console.log(colors.length);
 
   const planeGeometry = new THREE.PlaneGeometry(2, 2);
 
@@ -41,8 +41,8 @@ const createPlane = (renderer, imgs) => {
 
       uDuration: { value: 8.0 },
       resolution: { value: new THREE.Vector4() },
-      colors: { value: colors },
-      colorsLength: { value: colors.length },
+      colors: { value: colorsArray },
+      colorsLength: { value: colorsArray.length },
       uvRepeat1: { value: uvCover1.repeat },
       uvOffset1: { value: uvCover1.offset },
       uvRepeat2: { value: uvCover2.repeat },
