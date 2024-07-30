@@ -49,7 +49,7 @@ const Webgl = ({ imgs }) => {
       .max(10)
       .name('Noise');
     gui.add(plane.mesh.material.uniforms.uOffset, 'value', 0, 1).name('Offset');
-    gui.add(plane.mesh.material.uniforms.uBlur, 'value', 0, 4).name('Blur');
+    gui.add(plane.mesh.material.uniforms.uBlur, 'value', -4, 4).name('Blur');
 
     // Animation
     const animate = () => {
