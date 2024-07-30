@@ -38,6 +38,7 @@ const createPlane = (renderer, imgs) => {
 
       uOffset: { value: 0.0 },
       uNoise: { value: 3.0 },
+      uBlur: { value: 1.0 },
 
       uDuration: { value: 8.0 },
       resolution: { value: new THREE.Vector4() },

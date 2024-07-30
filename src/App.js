@@ -6,13 +6,22 @@ import Webgl from './components/Webgl/Webgl';
 function App() {
   const images = [
     {
-      src: 'man.png',
+      src: 'teammember1.png',
     },
     {
-      src: 'man2.png',
+      src: 'teammember2.png',
     },
     {
-      src: 'man3.png',
+      src: 'teammember3.png',
+    },
+    {
+      src: 'teammember4.png',
+    },
+    {
+      src: 'teammember5.png',
+    },
+    {
+      src: 'teammember6.png',
     },
   ];
 
