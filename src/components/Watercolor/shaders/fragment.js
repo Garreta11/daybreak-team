@@ -93,9 +93,6 @@ const fragmentShader = glsl`
     color.rgb *= vec3(1.0 - n * 0.5  * uOffset);
     color2.rgb *= vec3(1.0 - n * 0.5 * uOffset);
 
-    /* vec4 color = texture2D(uTexture1, st);
-    vec4 color2 = texture2D(uTexture2, st); */
-
     vec3 hsv = rgb2hsv(color.rgb);
     vec3 hsv2 = rgb2hsv(color2.rgb);
 
@@ -104,7 +101,6 @@ const fragmentShader = glsl`
     vec3 blendColor2 = blendColors(color2.rgb, hsv2.b);
 
     gl_FragColor = mix(vec4(blendColor1, color.a), vec4(blendColor2, color2.a), uOffsetImages);
-    // gl_FragColor = vec4(hueColor, color.a);
   }
 `;
 export default fragmentShader;
