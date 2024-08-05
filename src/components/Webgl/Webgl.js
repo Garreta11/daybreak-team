@@ -18,8 +18,6 @@ const Webgl = ({ imgs }) => {
     // Scene
     const scene = new THREE.Scene();
 
-    const app = document.querySelector('#app');
-
     // Camera
     // const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
     const camera = new THREE.PerspectiveCamera(
@@ -80,12 +78,18 @@ const Webgl = ({ imgs }) => {
   }, []);
 
   const handleImage = (src, index) => {
+    const colors = [];
+    imgs[index].colors.forEach((c, i) => {
+      colors[i] = new THREE.Color(c);
+    });
+
     const t = new THREE.TextureLoader().load(src);
     if (dir) {
       planeImage.mesh.material.uniforms.uTexture1.value = t;
     } else {
       planeImage.mesh.material.uniforms.uTexture2.value = t;
     }
+    // planeImage.mesh.material.uniforms.colors.value = colors;
 
     gsap.fromTo(
       planeImage.mesh.material.uniforms.uOffset,

@@ -122,9 +122,7 @@ const fragmentShader = glsl`
     // get displacement force based of one color canal of the image, then use uProgress
     float displaceForce1 = n * uOffset * displacementCoef;
     vec2 uvDisplacement1 = vec2(vUvMap1.x + displaceForce1, vUvMap1.y);
-    
     vec4 displacedTexture1 = texture2D(uTexture1, uvDisplacement1, uBlur);    
-    
     float gray1 = dot(displacedTexture1.rgb, vec3(0.2126, 0.7152, 0.0722));
     vec4 blendedColor1 = vec4(blendColors(displacedTexture1.rgb, gray1), displacedTexture1.a);
 
@@ -136,9 +134,6 @@ const fragmentShader = glsl`
     vec4 blendedColor2 = vec4(blendColors(displacedTexture2.rgb, gray2), displacedTexture2.a);
 
     gl_FragColor = mix(blendedColor1, blendedColor2, uOffset);
-    // gl_FragColor = vec4(vec3(n), 1.0);
-    // gl_FragColor = texture2D(uTexture1, fract(uNoise * vUv));
-
   }
 `;
 export default fragmentShader;

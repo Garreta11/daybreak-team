@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { getCoverUV } from '../../../utils/three.js';
 
 // shaders
-import vertex from '../../../shaders/vertex.js';
-import fragment from '../../../shaders/fragmentDisplacement.js';
+import vertex from '../shaders/vertex.js';
+import fragment from '../shaders/fragmentDisplacement.js';
 
 const createPlane = (renderer, imgs) => {
   const colorsArray = [
@@ -13,9 +13,6 @@ const createPlane = (renderer, imgs) => {
     new THREE.Color(0xffff00), // Yellow
     new THREE.Color(0xff00ff), // Magenta
   ];
-
-  // const colors = colorsArray.map((color) => color.toArray()).flat();
-  // console.log(colors.length);
 
   const planeGeometry = new THREE.PlaneGeometry(2, 2);
 
@@ -38,7 +35,7 @@ const createPlane = (renderer, imgs) => {
 
       uOffset: { value: 0.0 },
       uNoise: { value: 3.0 },
-      uBlur: { value: 1.0 },
+      uBlur: { value: 0.0 },
 
       uDuration: { value: 8.0 },
       resolution: { value: new THREE.Vector4() },
