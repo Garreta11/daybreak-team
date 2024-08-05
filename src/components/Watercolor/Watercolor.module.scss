@@ -6,6 +6,12 @@
   gap: 20px;
   transform: translate(-50%, -50%);
 
+  transition: opacity ease 0.5s;
+
+  &__disable {
+    opacity: 0.2;
+  }
+
   &__item {
     cursor: pointer;
     width: 70px;

@@ -7,6 +7,7 @@ const fragmentShader = glsl`
   uniform float time;
   uniform float uOffset;
   uniform float uOffsetImages;
+  uniform float uNoise;
 
   uniform vec4 resolution;
   uniform sampler2D uTexture1;
@@ -15,12 +16,12 @@ const fragmentShader = glsl`
   uniform vec3 colorsArray[5]; // Maximum array size
   uniform int colorsLength;
 
-
   varying vec2 vUv;
   varying vec3 vPosition;
 
   float PI = 3.141592653589793238;
 
+  // RGB to HSV
   vec3 rgb2hsv(vec3 c)
   {
       vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
@@ -32,6 +33,7 @@ const fragmentShader = glsl`
       return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
   }
 
+  // HSV to RGB
   vec3 hsv2rgb(vec3 c)
   {
       vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
@@ -39,6 +41,7 @@ const fragmentShader = glsl`
       return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
   }
 
+  // Fractal Brownian Motion (FBM)
   float rand(vec2 n) { 
     return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
   }
@@ -68,7 +71,7 @@ const fragmentShader = glsl`
     return v;
   }
 
-  // Blend Colors
+  // BLENDING COLORS
   vec3 blendColors(vec3 color, float t) {
     float scaledT = t * float(colorsLength - 1);
     int index = int(scaledT);
@@ -83,12 +86,12 @@ const fragmentShader = glsl`
   void main() {  
     vec2 st = vUv;
     // Apply FBM
-    float n = fbm(st * 50.0 + time);
+    float n = fbm(st * uNoise + time);
 
     // Get the texture color of both iamges
-    vec4 color = texture2D(uTexture1, mix(st, st + n * 0.05, uOffset));
-    vec4 color2 = texture2D(uTexture2, mix(st, st + n * 0.05, uOffset));
-
+    vec4 color = texture2D(uTexture1, mix(st, st + n * 0.1, uOffset));
+    vec4 color2 = texture2D(uTexture2, mix(st, st + n * 0.1, uOffset));
+    
     // Watercolor effect
     color.rgb *= vec3(1.0 - n * 0.5  * uOffset);
     color2.rgb *= vec3(1.0 - n * 0.5 * uOffset);
@@ -96,11 +99,12 @@ const fragmentShader = glsl`
     vec3 hsv = rgb2hsv(color.rgb);
     vec3 hsv2 = rgb2hsv(color2.rgb);
 
-    // color = vec4(vec3(hsv.r), color.a);
-    vec3 blendColor1 = blendColors(color.rgb, hsv.b);
-    vec3 blendColor2 = blendColors(color2.rgb, hsv2.b);
+    vec3 blendColor1 = blendColors(color.rgb, hsv.r);
+    vec3 blendColor2 = blendColors(color2.rgb, hsv2.r);
 
-    gl_FragColor = mix(vec4(blendColor1, color.a), vec4(blendColor2, color2.a), uOffsetImages);
+    vec4 finalColor = mix(vec4(hsv, color.a), vec4(hsv2, color2.a), uOffsetImages);
+
+    gl_FragColor = finalColor;
   }
 `;
 export default fragmentShader;

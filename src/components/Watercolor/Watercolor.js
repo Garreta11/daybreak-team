@@ -10,7 +10,7 @@ import fragment from './shaders/fragment.js';
 const Watercolor = ({ imgs }) => {
   const [dir, setDir] = useState(false);
   const canvasRef = useRef(null);
-  const speed = useRef(null);
+  const [activeButtons, setActiveButtons] = useState(true);
   const [planeImage, setPlaneImage] = useState(null);
   useEffect(() => {
     // Scene
@@ -51,6 +51,7 @@ const Watercolor = ({ imgs }) => {
         time: { value: 0.0 },
         uOffset: { value: 0.0 },
         uOffsetImages: { value: 0.0 },
+        uNoise: { value: 50.0 },
         uTexture1: { value: new THREE.TextureLoader().load(imgs[0].src) },
         uTexture2: { value: new THREE.TextureLoader().load(imgs[1].src) },
         resolution: { value: new THREE.Vector4() },
@@ -74,6 +75,11 @@ const Watercolor = ({ imgs }) => {
     gui
       .add(mesh.material.uniforms.uOffsetImages, 'value', 0, 1)
       .name('OffsetImages')
+      .listen();
+
+    gui
+      .add(mesh.material.uniforms.uNoise, 'value', 1, 100)
+      .name('Noise')
       .listen();
 
     // Animation
@@ -104,6 +110,8 @@ const Watercolor = ({ imgs }) => {
   }, []);
 
   const handleImage = (src, index) => {
+    if (!activeButtons) return;
+
     const t = new THREE.TextureLoader().load(src);
     if (dir) {
       planeImage.material.uniforms.uTexture1.value = t;
@@ -115,23 +123,24 @@ const Watercolor = ({ imgs }) => {
     planeImage.material.uniforms.uOffset.value = 0;
     planeImage.material.uniforms.uOffsetImages.value = dir ? 1 : 0;
 
+    setActiveButtons(false);
+
     const tl = gsap.timeline();
     tl.to(planeImage.material.uniforms.uOffset, {
       value: 1,
-      ease: 'sine.in',
-      duration: 1,
+      ease: 'power1.inOut',
     });
     tl.to(planeImage.material.uniforms.uOffsetImages, {
       value: dir ? 0 : 1,
-      ease: 'sine.inOut',
-      duration: 1.5,
+      ease: 'none',
+      duration: 2,
     });
     tl.to(planeImage.material.uniforms.uOffset, {
       value: 0,
-      ease: 'sine.in',
-      duration: 1,
+      ease: 'power1.inOut',
       onComplete() {
         setDir(!dir);
+        setActiveButtons(true);
       },
     });
 
@@ -140,7 +149,11 @@ const Watercolor = ({ imgs }) => {
   return (
     <>
       <div ref={canvasRef} />
-      <div className={styles.images}>
+      <div
+        className={`${styles.images} ${
+          activeButtons ? null : styles.images__disable
+        }`}
+      >
         {imgs.map((img, index) => {
           return (
             <div key={index} className={styles.images__item}>
