@@ -25,7 +25,7 @@ const Watercolor = ({ imgs }) => {
       1000
     );
     scene.add(camera);
-    camera.position.z = 6;
+    camera.position.z = 4;
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -51,10 +51,14 @@ const Watercolor = ({ imgs }) => {
         time: { value: 0.0 },
         uOffset: { value: 0.0 },
         uOffsetImages: { value: 0.0 },
-        uNoise: { value: 50.0 },
+        uKuwahara: { value: 10 },
+        uNoise: { value: 10 },
+        uZoom: { value: 0.5 },
         uTexture1: { value: new THREE.TextureLoader().load(imgs[0].src) },
         uTexture2: { value: new THREE.TextureLoader().load(imgs[1].src) },
-        resolution: { value: new THREE.Vector4() },
+        resolution: {
+          value: new THREE.Vector4(window.innerWidth, window.innerHeight, 1, 1),
+        },
         colorsArray: { value: colorsArray },
         colorsLength: { value: colorsArray.length },
       },
@@ -78,6 +82,12 @@ const Watercolor = ({ imgs }) => {
       .listen();
 
     gui
+      .add(mesh.material.uniforms.uKuwahara, 'value', 1, 100)
+      .step(1)
+      .name('Kuwahara Filter')
+      .listen();
+
+    gui
       .add(mesh.material.uniforms.uNoise, 'value', 1, 100)
       .name('Noise')
       .listen();
@@ -98,6 +108,15 @@ const Watercolor = ({ imgs }) => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+
+      if (mesh) {
+        mesh.material.uniforms.resolution.value = new THREE.Vector4(
+          window.innerWidth,
+          window.innerHeight,
+          1,
+          1
+        );
+      }
     };
 
     window.addEventListener('resize', handleResize);
@@ -129,15 +148,17 @@ const Watercolor = ({ imgs }) => {
     tl.to(planeImage.material.uniforms.uOffset, {
       value: 1,
       ease: 'power1.inOut',
+      duration: 1,
     });
     tl.to(planeImage.material.uniforms.uOffsetImages, {
       value: dir ? 0 : 1,
       ease: 'none',
-      duration: 2,
+      // duration: 2,
     });
     tl.to(planeImage.material.uniforms.uOffset, {
       value: 0,
       ease: 'power1.inOut',
+      duration: 1,
       onComplete() {
         setDir(!dir);
         setActiveButtons(true);
