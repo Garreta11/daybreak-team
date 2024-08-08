@@ -186,24 +186,25 @@ const fragmentShader = glsl`
 
     float n = fbm(st * uNoise + r + time);
 
+    
+    // Center the coordinates around (0.5, 0.5) and apply FBM (n)
+    vec2 centeredUv = vUv - vec2(0.5);
+    vec2 offset = centeredUv * (n * 0.3 + 1.0);
+    offset += vec2(0.5);
+    
     // Apply Kuwahara filter
     vec2 pixel = vec2(2.0) / resolution.xy;
-    vec4 color = kuwaharaFilter(uTexture1, mix(st, st + n * 0.1, uOffset), pixel, uKuwahara);
-    vec4 color2 = kuwaharaFilter(uTexture2, mix(st, st + n * 0.1, uOffset), pixel, uKuwahara);
+    vec4 color = kuwaharaFilter(uTexture1, mix(st, offset, uOffset), pixel, uKuwahara);
+    vec4 color2 = kuwaharaFilter(uTexture2, mix(st, offset, uOffset), pixel, uKuwahara);
 
+    // Blend Colors
     float gray1 = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     float gray2 = dot(color2.rgb, vec3(0.2126, 0.7152, 0.0722));
-    
-    // Watercolor effect
-    // color.rgb *= vec3(1.0 - n * 0.5  * uOffset);
-    // color2.rgb *= vec3(1.0 - n * 0.5 * uOffset);
-
     vec3 blendColor1 = blendColors(color.rgb, gray1);
     vec3 blendColor2 = blendColors(color2.rgb, gray2);
 
     // vec4 finalColor = mix(vec4(blendColor1, color.a), vec4(blendColor2, color2.a), uOffsetImages);
     vec4 finalColor = mix(vec4(color), vec4(color2), uOffsetImages);
-
     gl_FragColor = finalColor;
   }
 `;

@@ -51,7 +51,7 @@ const Watercolor = ({ imgs }) => {
         time: { value: 0.0 },
         uOffset: { value: 0.0 },
         uOffsetImages: { value: 0.0 },
-        uKuwahara: { value: 10 },
+        uKuwahara: { value: 3 },
         uNoise: { value: 10 },
         uZoom: { value: 0.5 },
         uTexture1: { value: new THREE.TextureLoader().load(imgs[0].src) },
