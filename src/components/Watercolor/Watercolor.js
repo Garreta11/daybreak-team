@@ -54,7 +54,7 @@ const Watercolor = ({ imgs }) => {
         uOffset: { value: 0.0 },
         uOffsetImages: { value: 0.0 },
         uKuwahara: { value: 20 },
-        uNoise: { value: 20 },
+        uNoise: { value: 10 },
         uZoom: { value: 0.5 },
         uBlurAmount: { value: 3.0 },
         uTexture1: { value: new THREE.TextureLoader().load(imgs[0].src) },
@@ -109,7 +109,7 @@ const Watercolor = ({ imgs }) => {
       renderer.render(scene, camera);
 
       if (mesh) {
-        mesh.material.uniforms.time.value += 0.005;
+        mesh.material.uniforms.time.value += 0.05;
       }
     };
     animate();
