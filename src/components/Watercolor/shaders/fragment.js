@@ -9,6 +9,7 @@ const fragmentShader = glsl`
   uniform float uOffsetImages;
   uniform int uKuwahara;
   uniform float uNoise;
+  uniform float uBlurAmount;
 
   uniform vec4 resolution;
   uniform sampler2D uTexture1;
@@ -16,30 +17,37 @@ const fragmentShader = glsl`
 
   uniform vec3 colorsArray[5]; // Maximum array size
   uniform int colorsLength;
+  
+  uniform vec3 colorsArray2[5]; // Maximum array size
+  uniform int colorsLength2;
 
   varying vec2 vUv;
   varying vec3 vPosition;
 
   float PI = 3.141592653589793238;
 
-  // RGB to HSV
-  vec3 rgb2hsv(vec3 c)
-  {
-      vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-      vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-      vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+  // Define the Gaussian kernel
+  float gaussian[9] = float[9](
+    1.0, 2.0, 1.0,
+    2.0, 4.0, 2.0,
+    1.0, 2.0, 1.0
+  );
 
-      float d = q.x - min(q.w, q.y);
-      float e = 1.0e-10;
-      return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-  }
+  // RGB to HSB
+  vec3 rgb2hsb( in vec3 c ){
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
 
-  // HSV to RGB
-  vec3 hsv2rgb(vec3 c)
-  {
-      vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-      vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-      return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+  // HSB to RGB
+  vec3 hsb2rgb( in vec3 c ){
+    vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0), 6.0)-3.0)-1.0, 0.0, 1.0 );
+    rgb = rgb*rgb*(3.0-2.0*rgb);
+    return c.z * mix(vec3(1.0), rgb, c.y);
   }
 
   // Fractal Brownian Motion (FBM)
@@ -72,8 +80,8 @@ const fragmentShader = glsl`
     return v;
   }
 
-  // BLENDING COLORS
-  vec3 blendColors(vec3 color, float t) {
+  // BLENDING COLORS TEXTURE1
+  vec3 blendColors1(vec3 color, float t) {
     float scaledT = t * float(colorsLength - 1);
     int index = int(scaledT);
     float fraction = scaledT - float(index);
@@ -83,7 +91,19 @@ const fragmentShader = glsl`
     // Linear interpolation between color1 and color2
     return mix(color1, color2, fraction);
   }
+  // BLENDING COLORS TEXTURE2
+  vec3 blendColors2(vec3 color, float t) {
+    float scaledT = t * float(colorsLength2 - 1);
+    int index = int(scaledT);
+    float fraction = scaledT - float(index);
+    vec3 color1 = colorsArray2[index];
+    vec3 color2 = colorsArray2[min(index + 1, colorsLength2 - 1)]; // Ensure index is within bounds
+  
+    // Linear interpolation between color1 and color2
+    return mix(color1, color2, fraction);
+  }
 
+  // KUWAHARA FILTER
   vec4 kuwaharaFilter(sampler2D tex, vec2 st, vec2 pixel, int radius) {
     float n = float((radius + 1) * (radius + 1));
     int i; int j;
@@ -173,6 +193,27 @@ const fragmentShader = glsl`
     return rta;
   }
 
+  // Gaussian blur function
+  vec4 applyGaussianBlur(sampler2D tex, vec2 uv, vec2 pixelSize, float blurAmount) {
+    vec4 color = vec4(0.0);
+    int index = 0;
+    float totalWeight = 0.0;
+    
+    // Offsets for a 3x3 kernel
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            vec2 offset = vec2(float(x), float(y)) * pixelSize * blurAmount;  // Apply blurAmount here
+            color += texture2D(tex, uv + offset) * gaussian[index];
+            totalWeight += gaussian[index];
+            index++;
+        }
+    }
+    
+    // Normalize the color
+    color /= totalWeight;
+    return color;
+  }
+
   void main() {  
     vec2 st = vUv;
     // Apply FBM for WaterColor Effect
@@ -194,17 +235,28 @@ const fragmentShader = glsl`
     
     // Apply Kuwahara filter
     vec2 pixel = vec2(2.0) / resolution.xy;
-    vec4 color = kuwaharaFilter(uTexture1, mix(st, offset, uOffset), pixel, uKuwahara);
-    vec4 color2 = kuwaharaFilter(uTexture2, mix(st, offset, uOffset), pixel, uKuwahara);
+    
+    vec4 colorKuwahara = kuwaharaFilter(uTexture1, mix(st, offset, uOffset), pixel, uKuwahara);
+    vec4 color2Kuwahara = kuwaharaFilter(uTexture2, mix(st, offset, uOffset), pixel, uKuwahara);
+
+    vec4 colorGaussian = applyGaussianBlur(uTexture1, mix(st, offset, uOffset), pixel, uBlurAmount);
+    vec4 color2Gaussian = applyGaussianBlur(uTexture2, mix(st, offset, uOffset), pixel, uBlurAmount);
+
+    vec4 color = mix(colorKuwahara, colorGaussian, 0.5);
+    vec4 color2 = mix(color2Kuwahara, color2Gaussian, 0.5);
+
+    vec3 hsbColor = rgb2hsb(color.rgb);
+    vec3 rgbColor = hsb2rgb(vec3(hsbColor.x, 1.0, 1.0));
+    vec3 hsbColor2 = rgb2hsb(color2.rgb);
+    vec3 rgbColor2 = hsb2rgb(vec3(hsbColor2.x, 1.0, 1.0));
 
     // Blend Colors
     float gray1 = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     float gray2 = dot(color2.rgb, vec3(0.2126, 0.7152, 0.0722));
-    vec3 blendColor1 = blendColors(color.rgb, gray1);
-    vec3 blendColor2 = blendColors(color2.rgb, gray2);
+    vec3 blendColor1 = blendColors1(rgbColor, gray1);
+    vec3 blendColor2 = blendColors2(rgbColor2, gray2);
 
-    // vec4 finalColor = mix(vec4(blendColor1, color.a), vec4(blendColor2, color2.a), uOffsetImages);
-    vec4 finalColor = mix(vec4(color), vec4(color2), uOffsetImages);
+    vec4 finalColor = mix(vec4(blendColor1, color.a), vec4(blendColor2, color2.a), uOffsetImages);
     gl_FragColor = finalColor;
   }
 `;

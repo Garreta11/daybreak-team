@@ -8,27 +8,27 @@ function App() {
   const images = [
     {
       src: 'teammember1.png',
-      colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'],
+      colors: ['#023A89', '#C61173', '#6F661E', '#FC5C5A', '#783BAD'],
     },
     {
       src: 'teammember2.png',
-      colors: ['#ff0000', '#00ff00', '#0000ff'],
+      colors: ['#FFC36', '#6A0370', '#04D385', '#FFC36E', '#068CE6'],
     },
     {
       src: 'teammember3.png',
-      colors: ['#ffff00', '#00ff00', '#ff0000', '#ff00ff'],
+      colors: ['#FF91D7', '#A30F86', '#45B345', '#023A89', '#FC5C5A'],
     },
     {
       src: 'teammember4.png',
-      colors: ['#00ff00', '#ff00ff'],
+      colors: ['#08CAC0', '#45B345', '#B55204', '#69BBFF', '#6CED8E'],
     },
     {
       src: 'teammember5.png',
-      colors: ['#00ff03', '#ffff00', '#3c00ff', '#ff00b8', '#ff00ff'],
+      colors: ['#783BAD', '#068CE6', '#6CED8E', '#EB3E64', '#C61173'],
     },
     {
       src: 'teammember6.png',
-      colors: ['#00ff00', '#f13000', '#ff00ff', '#9100ff', '#ffff00'],
+      colors: ['#FFA948', '#FFC36E', '#6F661E', '#99E6A2', '#04D385'],
     },
   ];
 

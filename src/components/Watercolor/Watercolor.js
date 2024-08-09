@@ -17,7 +17,6 @@ const Watercolor = ({ imgs }) => {
     const scene = new THREE.Scene();
 
     // Camera
-    // const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
     const camera = new THREE.PerspectiveCamera(
       45,
       window.innerWidth / window.innerHeight,
@@ -33,13 +32,16 @@ const Watercolor = ({ imgs }) => {
     canvasRef.current.appendChild(renderer.domElement);
 
     // Colors Array
-    const colorsArray = [
-      new THREE.Color(0xff0000), // Red
-      new THREE.Color(0x00ff00), // Green
-      new THREE.Color(0x0000ff), // Blue
-      new THREE.Color(0xffff00), // Yellow
-      new THREE.Color(0xff00ff), // Magenta
-    ];
+    const cols = imgs[0].colors;
+    const colorsArray = [];
+    cols.map((c, i) => {
+      colorsArray[i] = new THREE.Color(c);
+    });
+    const cols2 = imgs[1].colors;
+    const colorsArray2 = [];
+    cols2.map((c, i) => {
+      colorsArray2[i] = new THREE.Color(c);
+    });
 
     // Plane Geometry
     const planeGeometry = new THREE.PlaneGeometry(2, 2);
@@ -51,9 +53,10 @@ const Watercolor = ({ imgs }) => {
         time: { value: 0.0 },
         uOffset: { value: 0.0 },
         uOffsetImages: { value: 0.0 },
-        uKuwahara: { value: 3 },
-        uNoise: { value: 10 },
+        uKuwahara: { value: 20 },
+        uNoise: { value: 20 },
         uZoom: { value: 0.5 },
+        uBlurAmount: { value: 3.0 },
         uTexture1: { value: new THREE.TextureLoader().load(imgs[0].src) },
         uTexture2: { value: new THREE.TextureLoader().load(imgs[1].src) },
         resolution: {
@@ -61,6 +64,8 @@ const Watercolor = ({ imgs }) => {
         },
         colorsArray: { value: colorsArray },
         colorsLength: { value: colorsArray.length },
+        colorsArray2: { value: colorsArray },
+        colorsLength2: { value: colorsArray.length },
       },
       vertexShader: vertex,
       fragmentShader: fragment,
@@ -82,7 +87,7 @@ const Watercolor = ({ imgs }) => {
       .listen();
 
     gui
-      .add(mesh.material.uniforms.uKuwahara, 'value', 1, 100)
+      .add(mesh.material.uniforms.uKuwahara, 'value', 1, 20)
       .step(1)
       .name('Kuwahara Filter')
       .listen();
@@ -90,6 +95,12 @@ const Watercolor = ({ imgs }) => {
     gui
       .add(mesh.material.uniforms.uNoise, 'value', 1, 100)
       .name('Noise')
+      .listen();
+
+    gui
+      .add(mesh.material.uniforms.uBlurAmount, 'value', 0, 5)
+      .step(0.01)
+      .name('Blur')
       .listen();
 
     // Animation
@@ -136,6 +147,18 @@ const Watercolor = ({ imgs }) => {
       planeImage.material.uniforms.uTexture1.value = t;
     } else {
       planeImage.material.uniforms.uTexture2.value = t;
+    }
+
+    // set colors
+    const colors = imgs[index].colors;
+    const colorsArray = [];
+    colors.map((c, i) => {
+      colorsArray[i] = new THREE.Color(c);
+    });
+    if (dir) {
+      planeImage.material.uniforms.colorsArray.value = colorsArray;
+    } else {
+      planeImage.material.uniforms.colorsArray2.value = colorsArray;
     }
 
     // Set initial state explicitly
