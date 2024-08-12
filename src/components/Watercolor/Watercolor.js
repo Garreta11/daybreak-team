@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './Watercolor.module.scss';
 
+import Stats from 'stats.js';
+
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { GUI } from 'dat.gui';
 import vertex from './shaders/vertex.js';
-import fragment from './shaders/fragment.js';
+import fragment from './shaders/fragmentKuwahara.js';
 
 const Watercolor = ({ imgs }) => {
   const [dir, setDir] = useState(false);
@@ -13,6 +15,10 @@ const Watercolor = ({ imgs }) => {
   const [activeButtons, setActiveButtons] = useState(true);
   const [planeImage, setPlaneImage] = useState(null);
   useEffect(() => {
+    // Stats
+    const stats = new Stats();
+    document.body.appendChild(stats.dom);
+
     // Scene
     const scene = new THREE.Scene();
 
@@ -37,6 +43,16 @@ const Watercolor = ({ imgs }) => {
     cols.map((c, i) => {
       colorsArray[i] = new THREE.Color(c);
     });
+
+    // Convert to vec4 array
+    const colorsArrayVec4 = new Float32Array(colorsArray.length * 4);
+    colorsArray.forEach((color, i) => {
+      colorsArrayVec4[i * 4] = color.r;
+      colorsArrayVec4[i * 4 + 1] = color.g;
+      colorsArrayVec4[i * 4 + 2] = color.b;
+      colorsArrayVec4[i * 4 + 3] = color.a || 1.0; // Assuming alpha is 1.0 if not defined
+    });
+
     const cols2 = imgs[1].colors;
     const colorsArray2 = [];
     cols2.map((c, i) => {
@@ -53,16 +69,17 @@ const Watercolor = ({ imgs }) => {
         time: { value: 0.0 },
         uOffset: { value: 0.0 },
         uOffsetImages: { value: 0.0 },
-        uKuwahara: { value: 20 },
+        uKuwahara: { value: 6 },
         uNoise: { value: 10 },
         uZoom: { value: 0.5 },
         uBlurAmount: { value: 3.0 },
+        uDirection: { value: new THREE.Vector2() },
         uTexture1: { value: new THREE.TextureLoader().load(imgs[0].src) },
         uTexture2: { value: new THREE.TextureLoader().load(imgs[1].src) },
         resolution: {
           value: new THREE.Vector4(window.innerWidth, window.innerHeight, 1, 1),
         },
-        colorsArray: { value: colorsArray },
+        colorsArray: { value: colorsArrayVec4 },
         colorsLength: { value: colorsArray.length },
         colorsArray2: { value: colorsArray },
         colorsLength2: { value: colorsArray.length },
@@ -74,6 +91,14 @@ const Watercolor = ({ imgs }) => {
     const mesh = new THREE.Mesh(planeGeometry, material);
     setPlaneImage(mesh);
     scene.add(mesh);
+
+    // Horizontal blur
+    material.uniforms.uDirection.value = new THREE.Vector2(1.0, 0.0);
+    renderer.render(scene, camera);
+
+    // Vertical blur
+    material.uniforms.uDirection.value = new THREE.Vector2(0.0, 1.0);
+    renderer.render(scene, camera);
 
     // Dat GUI
     const gui = new GUI();
@@ -87,7 +112,7 @@ const Watercolor = ({ imgs }) => {
       .listen();
 
     gui
-      .add(mesh.material.uniforms.uKuwahara, 'value', 1, 20)
+      .add(mesh.material.uniforms.uKuwahara, 'value', 1, 6)
       .step(1)
       .name('Kuwahara Filter')
       .listen();
@@ -105,12 +130,15 @@ const Watercolor = ({ imgs }) => {
 
     // Animation
     const animate = () => {
-      requestAnimationFrame(animate);
+      stats.begin();
+
       renderer.render(scene, camera);
 
       if (mesh) {
         mesh.material.uniforms.time.value += 0.05;
       }
+      stats.end();
+      requestAnimationFrame(animate);
     };
     animate();
 
@@ -155,10 +183,17 @@ const Watercolor = ({ imgs }) => {
     colors.map((c, i) => {
       colorsArray[i] = new THREE.Color(c);
     });
+    const colorsArrayVec4 = new Float32Array(colorsArray.length * 4);
+    colorsArray.forEach((color, i) => {
+      colorsArrayVec4[i * 4] = color.r;
+      colorsArrayVec4[i * 4 + 1] = color.g;
+      colorsArrayVec4[i * 4 + 2] = color.b;
+      colorsArrayVec4[i * 4 + 3] = color.a || 1.0; // Assuming alpha is 1.0 if not defined
+    });
     if (dir) {
-      planeImage.material.uniforms.colorsArray.value = colorsArray;
+      planeImage.material.uniforms.colorsArray.value = colorsArrayVec4;
     } else {
-      planeImage.material.uniforms.colorsArray2.value = colorsArray;
+      planeImage.material.uniforms.colorsArray2.value = colorsArrayVec4;
     }
 
     // Set initial state explicitly

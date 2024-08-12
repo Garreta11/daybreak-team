@@ -227,7 +227,6 @@ const fragmentShader = glsl`
 
     float n = fbm(st * uNoise + r + time);
 
-    
     // Center the coordinates around (0.5, 0.5) and apply FBM (n)
     vec2 centeredUv = vUv - vec2(0.5);
     vec2 offset = centeredUv * (n * 0.3 + 1.0);
@@ -255,6 +254,7 @@ const fragmentShader = glsl`
     float gray2 = dot(color2.rgb, vec3(0.2126, 0.7152, 0.0722));
     vec3 blendColor1 = blendColors1(rgbColor, gray1);
     vec3 blendColor2 = blendColors2(rgbColor2, gray2);
+
 
     vec4 finalColor = mix(vec4(blendColor1, color.a), vec4(blendColor2, color2.a), uOffsetImages);
     gl_FragColor = finalColor;
