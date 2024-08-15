@@ -12,7 +12,7 @@ function App() {
     },
     {
       src: 'teammember2.png',
-      colors: ['#FFC36', '#6A0370', '#04D385', '#FFC36E', '#068CE6'],
+      colors: ['#FFC36E', '#6A0370', '#04D385', '#FFC36E', '#068CE6'],
     },
     {
       src: 'teammember3.png',

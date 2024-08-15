@@ -142,42 +142,88 @@ const fragmentShader = glsl`
     return mix(color1, color2, fraction);
   }
 
+  // Fractal Brownian Motion (FBM)
+  float rand(vec2 n) { 
+    return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+  }
+
+  float noise(vec2 p){
+    vec2 ip = floor(p);
+    vec2 u = fract(p);
+    u = u*u*(3.0-2.0*u);
+    
+    float res = mix(
+      mix(rand(ip),rand(ip+vec2(1.0,0.0)),u.x),
+      mix(rand(ip+vec2(0.0,1.0)),rand(ip+vec2(1.0,1.0)),u.x),u.y);
+    return res*res;
+  }
+
+  float fbm(vec2 x) {
+    float v = 0.0;
+    float a = 0.5;
+    vec2 shift = vec2(100);
+    // Rotate to reduce axial bias
+      mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.50));
+    for (int i = 0; i < NUM_OCTAVES; ++i) {
+      v += a * noise(x);
+      x = rot * x * 2.0 + shift;
+      a *= 0.5;
+    }
+    return v;
+  }
+
 
   void main() {  
     vec2 st = vUv;
     vec2 pixel = vec2(2.0) / resolution.xy;
     vec2 direction = uDirection * uBlurAmount;
     vec2 texelSize = 1.0 / resolution.xy;
+
+    // Apply FBM for WaterColor Effect
+    vec2 q = vec2(0.);
+    q.x = fbm( st + 0.00*time);
+    q.y = fbm( st + vec2(1.0));
+    vec2 r = vec2(0.);
+    r.x = fbm( st + 1.0*q + vec2(1.7,9.2)+ 0.15*time );
+    r.y = fbm( st + 1.0*q + vec2(8.3,2.8)+ 0.126*time);
+    float n = fbm(st * uNoise + r + time);
+
+    // Center the coordinates around (0.5, 0.5) and apply FBM (n)
+    vec2 centeredUv = vUv - vec2(0.5);
+    vec2 offset = centeredUv * (n * 0.3 + 1.0);
+    offset += vec2(0.5);
+
+    vec2 newUv = mix(st, offset, uOffset);
     
     // TEXTURE 1
-    vec4 texture1 = texture2D(uTexture1, st);
-    vec4 finalColor = kuwaharaFilter(uTexture1, st, pixel, uKuwahara);
+    vec4 texture1 = texture2D(uTexture1, newUv);
+    vec4 finalColor = kuwaharaFilter(uTexture1, newUv, pixel, uKuwahara);
     float gray1 = dot(finalColor.rgb, vec3(0.2126, 0.7152, 0.0722));
     finalColor = blendColors1(finalColor, gray1);
-    finalColor += texture2D(uTexture1, st + direction * texelSize * -4.0) * 0.05;
-    finalColor += texture2D(uTexture1, st + direction * texelSize * -3.0) * 0.09;
-    finalColor += texture2D(uTexture1, st + direction * texelSize * -2.0) * 0.12;
-    finalColor += texture2D(uTexture1, st + direction * texelSize * -1.0) * 0.15;
-    finalColor += texture2D(uTexture1, st) * 0.16;
-    finalColor += texture2D(uTexture1, st + direction * texelSize * 1.0) * 0.15;
-    finalColor += texture2D(uTexture1, st + direction * texelSize * 2.0) * 0.12;
-    finalColor += texture2D(uTexture1, st + direction * texelSize * 3.0) * 0.09;
-    finalColor += texture2D(uTexture1, st + direction * texelSize * 4.0) * 0.05;
+    finalColor += texture2D(uTexture1, newUv + direction * texelSize * -4.0) * 0.05;
+    finalColor += texture2D(uTexture1, newUv + direction * texelSize * -3.0) * 0.09;
+    finalColor += texture2D(uTexture1, newUv + direction * texelSize * -2.0) * 0.12;
+    finalColor += texture2D(uTexture1, newUv + direction * texelSize * -1.0) * 0.15;
+    finalColor += texture2D(uTexture1, newUv) * 0.16;
+    finalColor += texture2D(uTexture1, newUv + direction * texelSize * 1.0) * 0.15;
+    finalColor += texture2D(uTexture1, newUv + direction * texelSize * 2.0) * 0.12;
+    finalColor += texture2D(uTexture1, newUv + direction * texelSize * 3.0) * 0.09;
+    finalColor += texture2D(uTexture1, newUv + direction * texelSize * 4.0) * 0.05;
 
     // TEXTURE 2
-    vec4 texture2 = texture2D(uTexture2, st);
-    vec4 finalColor2 = kuwaharaFilter(uTexture2, st, pixel, uKuwahara);
+    vec4 texture2 = texture2D(uTexture2, newUv);
+    vec4 finalColor2 = kuwaharaFilter(uTexture2, newUv, pixel, uKuwahara);
     float gray2 = dot(finalColor2.rgb, vec3(0.2126, 0.7152, 0.0722));
     finalColor2 = blendColors2(finalColor2, gray2);
-    finalColor2 += texture2D(uTexture2, st + direction * texelSize * -4.0) * 0.05;
-    finalColor2 += texture2D(uTexture2, st + direction * texelSize * -3.0) * 0.09;
-    finalColor2 += texture2D(uTexture2, st + direction * texelSize * -2.0) * 0.12;
-    finalColor2 += texture2D(uTexture2, st + direction * texelSize * -1.0) * 0.15;
-    finalColor2 += texture2D(uTexture2, st) * 0.16;
-    finalColor2 += texture2D(uTexture2, st + direction * texelSize * 1.0) * 0.15;
-    finalColor2 += texture2D(uTexture2, st + direction * texelSize * 2.0) * 0.12;
-    finalColor2 += texture2D(uTexture2, st + direction * texelSize * 3.0) * 0.09;
-    finalColor2 += texture2D(uTexture2, st + direction * texelSize * 4.0) * 0.05;
+    finalColor2 += texture2D(uTexture2, newUv + direction * texelSize * -4.0) * 0.05;
+    finalColor2 += texture2D(uTexture2, newUv + direction * texelSize * -3.0) * 0.09;
+    finalColor2 += texture2D(uTexture2, newUv + direction * texelSize * -2.0) * 0.12;
+    finalColor2 += texture2D(uTexture2, newUv + direction * texelSize * -1.0) * 0.15;
+    finalColor2 += texture2D(uTexture2, newUv) * 0.16;
+    finalColor2 += texture2D(uTexture2, newUv + direction * texelSize * 1.0) * 0.15;
+    finalColor2 += texture2D(uTexture2, newUv + direction * texelSize * 2.0) * 0.12;
+    finalColor2 += texture2D(uTexture2, newUv + direction * texelSize * 3.0) * 0.09;
+    finalColor2 += texture2D(uTexture2, newUv + direction * texelSize * 4.0) * 0.05;
 
     
     vec4 color = mix(vec4(finalColor.rgb * 0.5, texture1.a), vec4(finalColor2.rgb * 0.5, texture2.a), uOffsetImages);

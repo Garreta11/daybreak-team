@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { GUI } from 'dat.gui';
 import vertex from './shaders/vertex.js';
-import fragment from './shaders/fragmentKuwahara.js';
+import fragment from './shaders/fragment.js';
 
 const Watercolor = ({ imgs }) => {
   const [dir, setDir] = useState(false);
@@ -18,6 +18,9 @@ const Watercolor = ({ imgs }) => {
     // Stats
     const stats = new Stats();
     document.body.appendChild(stats.dom);
+
+    // Mouse
+    let mouse = { x: 0, y: 0, prevX: 0, prevY: 0, vX: 0, vY: 0 };
 
     // Scene
     const scene = new THREE.Scene();
@@ -37,7 +40,7 @@ const Watercolor = ({ imgs }) => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     canvasRef.current.appendChild(renderer.domElement);
 
-    // Colors Array
+    // COLORS ARRAY
     const cols = imgs[0].colors;
     const colorsArray = [];
     cols.map((c, i) => {
@@ -58,6 +61,48 @@ const Watercolor = ({ imgs }) => {
     cols2.map((c, i) => {
       colorsArray2[i] = new THREE.Color(c);
     });
+    // Convert to vec4 array
+    const colorsArrayVec42 = new Float32Array(colorsArray2.length * 4);
+    colorsArray2.forEach((color, i) => {
+      colorsArrayVec42[i * 4] = color.r;
+      colorsArrayVec42[i * 4 + 1] = color.g;
+      colorsArrayVec42[i * 4 + 2] = color.b;
+      colorsArrayVec42[i * 4 + 3] = color.a || 1.0; // Assuming alpha is 1.0 if not defined
+    });
+
+    // DataTexture
+    const settings = {
+      strength: 1,
+      relaxation: 0.9,
+      mouse: 0.25,
+      grid: 20,
+    };
+    const grid = settings.grid;
+    const sizeDataTexture = grid * grid;
+    const width = sizeDataTexture;
+    const height = sizeDataTexture;
+    const size = width * height;
+    const data = new Float32Array(3 * size);
+
+    for (let i = 0; i < size; i++) {
+      let r = 0.0;
+      const stride = i * 3;
+      data[stride] = r;
+      data[stride + 1] = r;
+      data[stride + 2] = 0;
+    }
+
+    const dataTexture = new THREE.DataTexture(
+      data,
+      width,
+      height,
+      THREE.RGBFormat,
+      THREE.FloatType
+    );
+    dataTexture.internalFormat = 'RGB32F';
+    dataTexture.generateMipmaps = false;
+    dataTexture.magFilter = dataTexture.minFilter = THREE.NearestFilter;
+    dataTexture.needsUpdate = true;
 
     // Plane Geometry
     const planeGeometry = new THREE.PlaneGeometry(2, 2);
@@ -70,18 +115,19 @@ const Watercolor = ({ imgs }) => {
         uOffset: { value: 0.0 },
         uOffsetImages: { value: 0.0 },
         uKuwahara: { value: 6 },
-        uNoise: { value: 10 },
+        uNoise: { value: 12 },
         uZoom: { value: 0.5 },
         uBlurAmount: { value: 3.0 },
         uDirection: { value: new THREE.Vector2() },
         uTexture1: { value: new THREE.TextureLoader().load(imgs[0].src) },
         uTexture2: { value: new THREE.TextureLoader().load(imgs[1].src) },
+        uDataTexture: { value: dataTexture },
         resolution: {
           value: new THREE.Vector4(window.innerWidth, window.innerHeight, 1, 1),
         },
         colorsArray: { value: colorsArrayVec4 },
         colorsLength: { value: colorsArray.length },
-        colorsArray2: { value: colorsArray },
+        colorsArray2: { value: colorsArrayVec42 },
         colorsLength2: { value: colorsArray.length },
       },
       vertexShader: vertex,
@@ -101,32 +147,45 @@ const Watercolor = ({ imgs }) => {
     renderer.render(scene, camera);
 
     // Dat GUI
-    const gui = new GUI();
-    gui
-      .add(mesh.material.uniforms.uOffset, 'value', 0, 1)
-      .name('Offset')
-      .listen();
-    gui
-      .add(mesh.material.uniforms.uOffsetImages, 'value', 0, 1)
-      .name('OffsetImages')
-      .listen();
+    const setDatGUI = () => {
+      const gui = new GUI();
+      var transition = gui.addFolder('Transition');
+      transition
+        .add(mesh.material.uniforms.uOffset, 'value', 0, 1)
+        .name('Offset')
+        .listen();
+      transition
+        .add(mesh.material.uniforms.uOffsetImages, 'value', 0, 1)
+        .name('OffsetImages')
+        .listen();
+      transition
+        .add(mesh.material.uniforms.uNoise, 'value', 1, 100)
+        .name('Noise')
+        .listen();
 
-    gui
-      .add(mesh.material.uniforms.uKuwahara, 'value', 1, 6)
-      .step(1)
-      .name('Kuwahara Filter')
-      .listen();
+      var imageFilters = gui.addFolder('Image Filters');
 
-    gui
-      .add(mesh.material.uniforms.uNoise, 'value', 1, 100)
-      .name('Noise')
-      .listen();
+      imageFilters
+        .add(mesh.material.uniforms.uKuwahara, 'value', 1, 6)
+        .step(1)
+        .name('Kuwahara Filter')
+        .listen();
+      imageFilters
+        .add(mesh.material.uniforms.uBlurAmount, 'value', 0, 5)
+        .step(0.01)
+        .name('Blur')
+        .listen();
 
-    gui
-      .add(mesh.material.uniforms.uBlurAmount, 'value', 0, 5)
-      .step(0.01)
-      .name('Blur')
-      .listen();
+      var mouseDistortion = gui.addFolder('Mouse Distortion');
+      mouseDistortion.add(settings, 'strength', 0, 1).step(0.01);
+      mouseDistortion.add(settings, 'relaxation', 0, 0.99).step(0.01);
+      mouseDistortion.add(settings, 'mouse', 0, 1).step(0.01);
+    };
+    setDatGUI();
+
+    const clamp = (number, min, max) => {
+      return Math.max(min, Math.min(number, max));
+    };
 
     // Animation
     const animate = () => {
@@ -135,8 +194,47 @@ const Watercolor = ({ imgs }) => {
       renderer.render(scene, camera);
 
       if (mesh) {
-        mesh.material.uniforms.time.value += 0.05;
+        // update time
+        mesh.material.uniforms.time.value += 0.005;
       }
+
+      // update data texture
+      if (dataTexture) {
+        let data = dataTexture.image.data;
+        for (let i = 0; i < data.length; i += 3) {
+          data[i] *= settings.relaxation;
+          data[i + 1] *= settings.relaxation;
+        }
+
+        let gridMouseX = sizeDataTexture * mouse.x;
+        let gridMouseY = sizeDataTexture * (1 - mouse.y);
+        let maxDist = sizeDataTexture * settings.mouse;
+        let aspect = window.innerHeight / window.innerWidth;
+
+        for (let i = 0; i < sizeDataTexture; i++) {
+          for (let j = 0; j < sizeDataTexture; j++) {
+            // let distance = (gridMouseX - i) ** 2 + (gridMouseY - j) ** 2;
+            let distance =
+              (gridMouseX - i) ** 2 / aspect + (gridMouseY - j) ** 2;
+            let maxDistSq = maxDist ** 2;
+            if (distance < maxDistSq) {
+              let index = 3 * (i + sizeDataTexture * j);
+
+              let power = maxDist / Math.sqrt(distance);
+              power = clamp(power, 0, 10);
+
+              data[index] += settings.strength * 100 * mouse.vX * power;
+              data[index + 1] -= settings.strength * 100 * mouse.vY * power;
+            }
+          }
+        }
+
+        mouse.vX *= 0.9;
+        mouse.vY *= 0.9;
+
+        dataTexture.needsUpdate = true;
+      }
+
       stats.end();
       requestAnimationFrame(animate);
     };
@@ -157,8 +255,40 @@ const Watercolor = ({ imgs }) => {
         );
       }
     };
-
     window.addEventListener('resize', handleResize);
+
+    // Raycaster
+    const raycaster = new THREE.Raycaster();
+    const handleMouseMove = (e) => {
+      const coords = new THREE.Vector2(
+        (e.clientX / window.innerWidth) * 2 - 1,
+        -((e.clientY / window.innerHeight) * 2 - 1)
+      );
+
+      /* raycaster.setFromCamera(coords, camera);
+      const intersections = raycaster.intersectObjects(scene.children, true);
+      if (intersections.length > 0) {
+        mouse.x = e.clientX / window.innerWidth;
+        mouse.y = e.clientY / window.innerHeight;
+        // mouse.x = coords.x;
+        // mouse.y = coords.y;
+        mouse.vX = mouse.x - mouse.prevX;
+        mouse.vY = mouse.y - mouse.prevY;
+
+        mouse.prevX = mouse.x;
+        mouse.prevY = mouse.y;
+      } */
+      mouse.x = e.clientX / window.innerWidth;
+      mouse.y = e.clientY / window.innerHeight;
+      // mouse.x = coords.x;
+      // mouse.y = coords.y;
+      mouse.vX = mouse.x - mouse.prevX;
+      mouse.vY = mouse.y - mouse.prevY;
+
+      mouse.prevX = mouse.x;
+      mouse.prevY = mouse.y;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
 
     // Clean up on component unmount
     return () => {
