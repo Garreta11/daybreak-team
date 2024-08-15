@@ -12,8 +12,10 @@ import fragment from './shaders/fragment.js';
 const Watercolor = ({ imgs }) => {
   const [dir, setDir] = useState(false);
   const canvasRef = useRef(null);
+  const circleRef = useRef(null);
   const [activeButtons, setActiveButtons] = useState(true);
   const [planeImage, setPlaneImage] = useState(null);
+
   useEffect(() => {
     // Stats
     const stats = new Stats();
@@ -348,6 +350,7 @@ const Watercolor = ({ imgs }) => {
   };
   return (
     <>
+      <div ref={circleRef} className={styles.circle} />
       <div ref={canvasRef} />
       <div
         className={`${styles.images} ${

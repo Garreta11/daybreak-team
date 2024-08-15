@@ -60,3 +60,15 @@
   }
 
 }
+
+.circle {
+  --circle-size: 40px;
+  position: fixed;
+  height: var(--circle-size);
+  width: var(--circle-size);
+  border: 1px solid black;
+  border-radius: 100%;
+  top: -20px;
+  left: -20px;
+  pointer-events: none;
+}
