@@ -72,9 +72,9 @@ const Watercolor = ({ imgs }) => {
 
     // DataTexture
     const settings = {
-      strength: 1,
+      strength: 0.1,
       relaxation: 0.9,
-      mouse: 0.25,
+      mouse: 0.15,
       grid: 20,
     };
     const grid = settings.grid;
@@ -260,18 +260,11 @@ const Watercolor = ({ imgs }) => {
     // Raycaster
     const raycaster = new THREE.Raycaster();
     const handleMouseMove = (e) => {
-      const coords = new THREE.Vector2(
-        (e.clientX / window.innerWidth) * 2 - 1,
-        -((e.clientY / window.innerHeight) * 2 - 1)
-      );
-
       /* raycaster.setFromCamera(coords, camera);
       const intersections = raycaster.intersectObjects(scene.children, true);
       if (intersections.length > 0) {
         mouse.x = e.clientX / window.innerWidth;
         mouse.y = e.clientY / window.innerHeight;
-        // mouse.x = coords.x;
-        // mouse.y = coords.y;
         mouse.vX = mouse.x - mouse.prevX;
         mouse.vY = mouse.y - mouse.prevY;
 
@@ -280,8 +273,6 @@ const Watercolor = ({ imgs }) => {
       } */
       mouse.x = e.clientX / window.innerWidth;
       mouse.y = e.clientY / window.innerHeight;
-      // mouse.x = coords.x;
-      // mouse.y = coords.y;
       mouse.vX = mouse.x - mouse.prevX;
       mouse.vY = mouse.y - mouse.prevY;
 
