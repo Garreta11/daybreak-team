@@ -120,6 +120,8 @@ const Watercolor = ({ imgs }) => {
         uNoise: { value: 12 },
         uZoom: { value: 0.5 },
         uBlurAmount: { value: 3.0 },
+        uNoiseAmplitude: { value: 0.0 },
+        uNoiseFrequency: { value: 0.0 },
         uDirection: { value: new THREE.Vector2() },
         uTexture1: { value: new THREE.TextureLoader().load(imgs[0].src) },
         uTexture2: { value: new THREE.TextureLoader().load(imgs[1].src) },
@@ -127,6 +129,7 @@ const Watercolor = ({ imgs }) => {
         resolution: {
           value: new THREE.Vector4(window.innerWidth, window.innerHeight, 1, 1),
         },
+        uMouse: { value: new THREE.Vector2() },
         colorsArray: { value: colorsArrayVec4 },
         colorsLength: { value: colorsArray.length },
         colorsArray2: { value: colorsArrayVec42 },
@@ -182,6 +185,13 @@ const Watercolor = ({ imgs }) => {
       mouseDistortion.add(settings, 'strength', 0, 1).step(0.01);
       mouseDistortion.add(settings, 'relaxation', 0, 0.99).step(0.01);
       mouseDistortion.add(settings, 'mouse', 0, 1).step(0.01);
+      var mouseDistortion2 = gui.addFolder('Mouse Distortion 2');
+      mouseDistortion2
+        .add(mesh.material.uniforms.uNoiseAmplitude, 'value', 0, 1)
+        .step(0.01);
+      mouseDistortion2
+        .add(mesh.material.uniforms.uNoiseFrequency, 'value', 0, 5)
+        .step(0.01);
     };
     setDatGUI();
 
@@ -201,7 +211,7 @@ const Watercolor = ({ imgs }) => {
       }
 
       // update data texture
-      if (dataTexture) {
+      /* if (dataTexture) {
         let data = dataTexture.image.data;
         for (let i = 0; i < data.length; i += 3) {
           data[i] *= settings.relaxation;
@@ -235,7 +245,7 @@ const Watercolor = ({ imgs }) => {
         mouse.vY *= 0.9;
 
         dataTexture.needsUpdate = true;
-      }
+      } */
 
       stats.end();
       requestAnimationFrame(animate);
@@ -262,17 +272,6 @@ const Watercolor = ({ imgs }) => {
     // Raycaster
     const raycaster = new THREE.Raycaster();
     const handleMouseMove = (e) => {
-      /* raycaster.setFromCamera(coords, camera);
-      const intersections = raycaster.intersectObjects(scene.children, true);
-      if (intersections.length > 0) {
-        mouse.x = e.clientX / window.innerWidth;
-        mouse.y = e.clientY / window.innerHeight;
-        mouse.vX = mouse.x - mouse.prevX;
-        mouse.vY = mouse.y - mouse.prevY;
-
-        mouse.prevX = mouse.x;
-        mouse.prevY = mouse.y;
-      } */
       mouse.x = e.clientX / window.innerWidth;
       mouse.y = e.clientY / window.innerHeight;
       mouse.vX = mouse.x - mouse.prevX;
@@ -280,6 +279,8 @@ const Watercolor = ({ imgs }) => {
 
       mouse.prevX = mouse.x;
       mouse.prevY = mouse.y;
+
+      material.uniforms.uMouse.value.set(e.pageX, e.pageY);
     };
     window.addEventListener('mousemove', handleMouseMove);
 
