@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { GUI } from 'dat.gui';
 import vertex from './shaders/vertex.js';
-import fragment from './shaders/fragment.js';
+import fragment from './shaders/fragmentMouse.js';
 
 const Watercolor = ({ imgs }) => {
   const [dir, setDir] = useState(false);
@@ -120,8 +120,8 @@ const Watercolor = ({ imgs }) => {
         uNoise: { value: 12 },
         uZoom: { value: 0.5 },
         uBlurAmount: { value: 3.0 },
-        uNoiseAmplitude: { value: 0.0 },
-        uNoiseFrequency: { value: 0.0 },
+        uNoiseAmplitude: { value: 0.003 },
+        uNoiseFrequency: { value: 5.0 },
         uDirection: { value: new THREE.Vector2() },
         uTexture1: { value: new THREE.TextureLoader().load(imgs[0].src) },
         uTexture2: { value: new THREE.TextureLoader().load(imgs[1].src) },
@@ -188,10 +188,12 @@ const Watercolor = ({ imgs }) => {
       var mouseDistortion2 = gui.addFolder('Mouse Distortion 2');
       mouseDistortion2
         .add(mesh.material.uniforms.uNoiseAmplitude, 'value', 0, 1)
-        .step(0.01);
+        .step(0.01)
+        .name('Noise Amplitude');
       mouseDistortion2
-        .add(mesh.material.uniforms.uNoiseFrequency, 'value', 0, 5)
-        .step(0.01);
+        .add(mesh.material.uniforms.uNoiseFrequency, 'value', 0, 10)
+        .step(0.01)
+        .name('Noise Frequency');
     };
     setDatGUI();
 

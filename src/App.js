@@ -3,6 +3,7 @@ import React from 'react';
 import './App.scss';
 import Webgl from './components/Webgl/Webgl';
 import Watercolor from './components/Watercolor/Watercolor';
+import Person from './components/Person/Person';
 
 function App() {
   const images = [
@@ -36,6 +37,7 @@ function App() {
     <div className='App' id='app'>
       {/* <Webgl imgs={images} /> */}
       <Watercolor imgs={images} />
+      {/* <Person imgs={images} /> */}
     </div>
   );
 }
