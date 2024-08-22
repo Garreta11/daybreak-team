@@ -300,13 +300,11 @@ const fragmentShader = glsl`
     float blendStrength = smoothstep(0.9, 0.0, dist); // Blending falls off with distance
 
     float offsetAmount = 0.03 * blendStrength;
-    // float offsetAmount = 0.0;
 
     // Center the UV coordinates around (0.5, 0.5), scale them, then move back
     float scaleFactor = 0.1;
     
     vec2 newBlendedUv = newUv + uNoiseAmplitude * cnoise(uNoiseFrequency * newUv + time * 0.01) - 0.5;
-    // vec2 scaledUV = newBlendedUv * sin(cnoise(scaleFactor * newBlendedUv + time * 0.01)) + 0.5;
     vec2 scaledUV = newBlendedUv + 0.5;
 
 
@@ -333,7 +331,7 @@ const fragmentShader = glsl`
     vec4 bColor1 = blendColors1(vec4(floodcolor, 1.0));
     finalColor = vec4(bColor1);
 
-    vec4 blendedColor = kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, offsetAmount), pixel, uKuwahara);
+    vec4 blendedColor = finalColor;
     blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, offsetAmount), pixel, uKuwahara);
     blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(-offsetAmount, offsetAmount), pixel, uKuwahara);
     blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(-offsetAmount, -offsetAmount), pixel, uKuwahara);
@@ -342,8 +340,8 @@ const fragmentShader = glsl`
     
     blendedColor = blendColors1(blendedColor);
 
-    // finalColor = mix(finalColor, blendedColor, blendStrength);
-    finalColor = blendedColor;
+    finalColor = mix(finalColor, blendedColor, blendStrength);
+    // finalColor = blendedColor;
 
     // TEXTURE 2
     vec4 texture2 = texture2D(uTexture2, newUv);
@@ -361,7 +359,7 @@ const fragmentShader = glsl`
     floodcolor2 = blendDarken(floodcolor2, texel2_3.rgb);
     floodcolor2 = blendDarken(floodcolor2, texel2_5.rgb);
 
-    vec4 bColor2 = blendColors2(finalColor2);
+    vec4 bColor2 = blendColors2(vec4(floodcolor2, 1.0));
     finalColor2 = bColor2;
 
     vec4 blendedColor2 = finalColor2;
@@ -374,7 +372,6 @@ const fragmentShader = glsl`
     blendedColor2 = blendColors2(blendedColor2);
 
     finalColor2 = mix(finalColor2, blendedColor2, blendStrength);
-
     
     vec4 color = mix(vec4(finalColor.rgb * 0.5, texture1.a), vec4(finalColor2.rgb * 0.5, texture2.a), uOffsetImages);
 
