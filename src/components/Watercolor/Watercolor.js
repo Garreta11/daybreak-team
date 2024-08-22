@@ -120,8 +120,10 @@ const Watercolor = ({ imgs }) => {
         uNoise: { value: 12 },
         uZoom: { value: 0.5 },
         uBlurAmount: { value: 3.0 },
-        uNoiseAmplitude: { value: 0.003 },
-        uNoiseFrequency: { value: 5.0 },
+        uNoiseAmplitude: { value: 0.05 },
+        uNoiseFrequency: { value: 3.15 },
+        uNoiseSpeed: { value: 0.88 },
+        uMouseSize: { value: 0.3 },
         uDirection: { value: new THREE.Vector2() },
         uTexture1: { value: new THREE.TextureLoader().load(imgs[0].src) },
         uTexture2: { value: new THREE.TextureLoader().load(imgs[1].src) },
@@ -181,10 +183,10 @@ const Watercolor = ({ imgs }) => {
         .name('Blur')
         .listen();
 
-      var mouseDistortion = gui.addFolder('Mouse Distortion');
+      /* var mouseDistortion = gui.addFolder('Mouse Distortion');
       mouseDistortion.add(settings, 'strength', 0, 1).step(0.01);
       mouseDistortion.add(settings, 'relaxation', 0, 0.99).step(0.01);
-      mouseDistortion.add(settings, 'mouse', 0, 1).step(0.01);
+      mouseDistortion.add(settings, 'mouse', 0, 1).step(0.01); */
       var mouseDistortion2 = gui.addFolder('Mouse Distortion 2');
       mouseDistortion2
         .add(mesh.material.uniforms.uNoiseAmplitude, 'value', 0, 1)
@@ -194,6 +196,14 @@ const Watercolor = ({ imgs }) => {
         .add(mesh.material.uniforms.uNoiseFrequency, 'value', 0, 10)
         .step(0.01)
         .name('Noise Frequency');
+      mouseDistortion2
+        .add(mesh.material.uniforms.uNoiseSpeed, 'value', 0, 1)
+        .step(0.01)
+        .name('Noise Speed');
+      mouseDistortion2
+        .add(mesh.material.uniforms.uMouseSize, 'value', 0.1, 0.9)
+        .step(0.01)
+        .name('Mouse Size');
     };
     setDatGUI();
 

@@ -8,7 +8,7 @@ import Person from './components/Person/Person';
 function App() {
   const images = [
     {
-      src: 'teammember1.png',
+      src: 'teammember1-blur.png',
       colors: ['#023A89', '#C61173', '#6F661E', '#FC5C5A', '#783BAD'],
     },
     {

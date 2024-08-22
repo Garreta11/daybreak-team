@@ -10,9 +10,11 @@ const fragmentShader = glsl`
   uniform int uKuwahara;
   uniform float uNoise;
   uniform float uBlurAmount;
+  uniform float uMouseSize;
 
   uniform float uNoiseAmplitude;
   uniform float uNoiseFrequency;
+  uniform float uNoiseSpeed;
 
   uniform vec4 resolution;
   uniform sampler2D uTexture1;
@@ -297,19 +299,20 @@ const fragmentShader = glsl`
     float dist = distance(centeredMouse, vUv * 2.0 - 1.0);
 
     // Set the strength of the blending based on proximity to the mouse
-    float blendStrength = smoothstep(0.9, 0.0, dist); // Blending falls off with distance
+    float blendStrength = smoothstep(uMouseSize, 0.0, dist); // Blending falls off with distance
 
     float offsetAmount = 0.03 * blendStrength;
 
     // Center the UV coordinates around (0.5, 0.5), scale them, then move back
     float scaleFactor = 0.1;
     
-    vec2 newBlendedUv = newUv + uNoiseAmplitude * cnoise(uNoiseFrequency * newUv + time * 0.01) - 0.5;
+    vec2 newBlendedUv = newUv + uNoiseAmplitude * cnoise(uNoiseFrequency * newUv + time * uNoiseSpeed) - 0.5;
     vec2 scaledUV = newBlendedUv + 0.5;
 
 
     vec2 aspect = vec2(1., resolution.y / resolution.x);
     vec2 disp = fbm(vUv * 22.0) * aspect * 0.01;
+    // vec2 disp = vec2(0.001);
     
     // TEXTURE 1
     vec4 texture1 = texture2D(uTexture1, newUv);
@@ -327,21 +330,27 @@ const fragmentShader = glsl`
     floodcolor = blendDarken(floodcolor, texel1_3.rgb);
     floodcolor = blendDarken(floodcolor, texel1_4.rgb);
     floodcolor = blendDarken(floodcolor, texel1_5.rgb);
-    
+
     vec4 bColor1 = blendColors1(vec4(floodcolor, 1.0));
     finalColor = vec4(bColor1);
 
     vec4 blendedColor = finalColor;
-    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, offsetAmount), pixel, uKuwahara);
-    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(-offsetAmount, offsetAmount), pixel, uKuwahara);
-    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(-offsetAmount, -offsetAmount), pixel, uKuwahara);
-    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, -offsetAmount), pixel, uKuwahara);
-    blendedColor /= 5.;
     
-    blendedColor = blendColors1(blendedColor);
+    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, offsetAmount) + direction * texelSize * -4.0, pixel, uKuwahara) * 0.05;
+    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(-offsetAmount, offsetAmount) + direction * texelSize * -3.0, pixel, uKuwahara) * 0.09;
+    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(-offsetAmount, -offsetAmount)  + direction * texelSize * -2.0, pixel, uKuwahara) * 0.12;
+    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, -offsetAmount) + direction * texelSize * -1.0, pixel, uKuwahara) * 0.15;
+    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, -offsetAmount), pixel, uKuwahara) * 0.16;
+    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, -offsetAmount) + direction * texelSize * 1.0, pixel, uKuwahara) * 0.15;
+    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, -offsetAmount) + direction * texelSize * 2.0, pixel, uKuwahara) * 0.12;
+    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, -offsetAmount) + direction * texelSize * 3.0, pixel, uKuwahara) * 0.09;
+    blendedColor += kuwaharaFilter(uTexture1, scaledUV + vec2(offsetAmount, -offsetAmount) + direction * texelSize * 4.0, pixel, uKuwahara) * 0.05;
 
+    blendedColor = blendColors1(blendedColor);
+    
+    
+    
     finalColor = mix(finalColor, blendedColor, blendStrength);
-    // finalColor = blendedColor;
 
     // TEXTURE 2
     vec4 texture2 = texture2D(uTexture2, newUv);
@@ -362,6 +371,10 @@ const fragmentShader = glsl`
     vec4 bColor2 = blendColors2(vec4(floodcolor2, 1.0));
     finalColor2 = bColor2;
 
+
+
+
+
     vec4 blendedColor2 = finalColor2;
     blendedColor2 += kuwaharaFilter(uTexture2, scaledUV + vec2(offsetAmount, offsetAmount), pixel, uKuwahara);
     blendedColor2 += kuwaharaFilter(uTexture2, scaledUV + vec2(-offsetAmount, offsetAmount), pixel, uKuwahara);
@@ -373,7 +386,7 @@ const fragmentShader = glsl`
 
     finalColor2 = mix(finalColor2, blendedColor2, blendStrength);
     
-    vec4 color = mix(vec4(finalColor.rgb * 0.5, texture1.a), vec4(finalColor2.rgb * 0.5, texture2.a), uOffsetImages);
+    vec4 color = mix(vec4(finalColor.rgb, texture1.a), vec4(finalColor2.rgb, texture2.a), uOffsetImages);
 
     gl_FragColor = color;
     // gl_FragColor = texture2D(uTexture1, st - 0.02 * dataTexture.rg);
