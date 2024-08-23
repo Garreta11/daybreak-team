@@ -316,7 +316,9 @@ const fragmentShader = glsl`
     
     // TEXTURE 1
     vec4 texture1 = texture2D(uTexture1, newUv);
-    vec4 finalColor = kuwaharaFilter(uTexture1, newUv, pixel, uKuwahara);
+    // vec4 finalColor = kuwaharaFilter(uTexture1, newUv, pixel, uKuwahara);
+
+    vec4 finalColor = texture1;
 
     vec4 texel1 = kuwaharaFilter(uTexture1, newUv, pixel, uKuwahara);
     vec4 texel1_2 = kuwaharaFilter(uTexture1, vec2(newUv.x + disp.x, newUv.y), pixel, uKuwahara);
