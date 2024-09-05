@@ -71,6 +71,8 @@ export default class Output {
 
     const colors = this.images[0].colors.map((color) => new THREE.Color(color));
 
+    this.aspectratio = this.width / this.height;
+
     // Color Shader
     this.colorMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -87,7 +89,7 @@ export default class Output {
     this.kuwaharaMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTexture: { value: this.texture },
-        uKuwahara: { value: 0.0 },
+        uKuwahara: { value: 3.0 },
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
 
         uColorsArray: { value: colors },
@@ -102,7 +104,7 @@ export default class Output {
     this.blurMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTexture: { value: this.renderTargetKuwahara.texture }, // Will be set to Kuwahara render target's texture
-        uBlurAmount: { value: 0.0 },
+        uBlurAmount: { value: 2.0 },
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
       },
       vertexShader: vertex,
@@ -110,10 +112,10 @@ export default class Output {
       transparent: true,
     });
 
-    // Color Pass
+    // Color Pass Scene
     this.colorScene = new THREE.Scene();
     const colorQuad = new THREE.Mesh(
-      new THREE.PlaneGeometry(2, 2),
+      new THREE.PlaneGeometry(1, 1 * this.aspectratio),
       this.colorMaterial
     );
     this.colorScene.add(colorQuad);
@@ -144,7 +146,6 @@ export default class Output {
   }
 
   onResize() {
-    console.log('resize');
     this.width = window.innerWidth;
     this.height = window.innerHeight;
     this.renderer.setSize(this.width, this.height);
@@ -159,6 +160,25 @@ export default class Output {
       this.height
     );
     this.blurMaterial.uniforms.uResolution.value.set(this.width, this.height);
+
+    // Update aspect ratio
+    this.aspectratio = this.width / this.height;
+    // Update PlaneGeometry dimensions
+    const colorQuad = this.colorScene.children[0];
+    colorQuad.geometry.dispose();
+    colorQuad.geometry = new THREE.PlaneGeometry(1, 1 * this.aspectratio);
+
+    const kuwaharaQuad = this.kuwaharaScene.children[0];
+    kuwaharaQuad.geometry.dispose();
+    kuwaharaQuad.geometry = new THREE.PlaneGeometry(2, 2);
+
+    const blurQuad = this.blurScene.children[0];
+    blurQuad.geometry.dispose();
+    blurQuad.geometry = new THREE.PlaneGeometry(2, 2);
+
+    const finalQuad = this.finalScene.children[0];
+    finalQuad.geometry.dispose();
+    finalQuad.geometry = new THREE.PlaneGeometry(2, 2);
   }
 
   applyFilters() {
