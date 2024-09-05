@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './Person.module.scss';
 import Sketch from './Sketch'; // Adjust the import path as necessary
+import Output from './Output.js';
 
 const Person = ({ imgs }) => {
   const containerRef = useRef(null);
@@ -9,7 +10,11 @@ const Person = ({ imgs }) => {
 
   useEffect(() => {
     // Initialize Experience
-    const experience = new Sketch({
+    /* const experience = new Sketch({
+      targetElement: containerRef.current,
+      images: imgs,
+    }); */
+    const webgl = new Output({
       targetElement: containerRef.current,
       images: imgs,
     });

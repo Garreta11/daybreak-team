@@ -11,7 +11,7 @@ const fragmentShader = glsl`
   void main() {
 
     vec4 color = texture2D(uTexture, vUv);
-    color = vec4(vUv, 0.0, 1.0);
+    // color = vec4(vUv, 0.0, 1.0);
     gl_FragColor = color;
   }
 `;

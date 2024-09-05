@@ -36,8 +36,8 @@ function App() {
   return (
     <div className='App' id='app'>
       {/* <Webgl imgs={images} /> */}
-      <Watercolor imgs={images} />
-      {/* <Person imgs={images} /> */}
+      {/* <Watercolor imgs={images} /> */}
+      <Person imgs={images} />
     </div>
   );
 }
