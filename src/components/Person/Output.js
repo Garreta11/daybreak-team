@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import Stats from 'stats.js';
 import { GUI } from 'dat.gui';
+import gsap from 'gsap';
 
 // Import your shaders
 import vertex from './shaders/vertex.js';
@@ -71,8 +72,7 @@ export default class Output {
 
   setupPipeline() {
     // Load texture
-    const textureLoader = new THREE.TextureLoader();
-    this.texture = textureLoader.load(this.images[0].src);
+    this.texture = new THREE.TextureLoader().load(this.images[0].src);
 
     const colors = this.images[0].colors.map((color) => new THREE.Color(color));
 
@@ -124,6 +124,7 @@ export default class Output {
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
         uTime: { value: 0.0 },
         uNoise: { value: 0.0 },
+        uOffset: { value: 0.0 },
       },
       vertexShader: vertex,
       fragmentShader: fragmentNoise,
@@ -242,8 +243,29 @@ export default class Output {
   }
 
   handleImageClick(src, index) {
-    // Logic to handle image click
-    console.log(`Image clicked: ${src}, index: ${index}`);
+    gsap.to(this.noiseMaterial.uniforms.uNoise, {
+      value: 14,
+      duration: 1,
+      yoyo: true,
+      repeat: 1, // Play forward, then reverse once
+    });
+    gsap.to(this.noiseMaterial.uniforms.uOffset, {
+      value: 1,
+      duration: 1,
+      yoyo: true,
+      repeat: 1, // Play forward, then reverse once
+      onComplete: () => {
+        // Change Texture to display
+        this.texture = new THREE.TextureLoader().load(src);
+        this.colorMaterial.uniforms.uTexture.value = this.texture;
+
+        // Change Colors to display
+        const colors = this.images[index].colors.map(
+          (color) => new THREE.Color(color)
+        );
+        this.colorMaterial.uniforms.uColorsArray.value = colors;
+      },
+    });
   }
 
   setDatGUI() {

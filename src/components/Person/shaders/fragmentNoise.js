@@ -8,6 +8,7 @@ const fragmentShader = glsl`
   uniform sampler2D uTexture;
   uniform float uTime;
   uniform float uNoise;
+  uniform float uOffset;
   uniform vec2 uResolution;
   varying vec2 vUv;
 
@@ -57,7 +58,9 @@ const fragmentShader = glsl`
     vec2 offset = centeredUv * (n * 0.3 + 1.0);
     offset += vec2(0.5);
 
-    vec4 color = texture2D(uTexture, offset);
+    vec2 newUv = mix(st, offset, uOffset);
+
+    vec4 color = texture2D(uTexture, newUv);
     gl_FragColor = color;
   }
 `;
