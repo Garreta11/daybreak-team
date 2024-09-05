@@ -8,6 +8,7 @@ import vertex from './shaders/vertex.js';
 import fragmentColor from './shaders/fragmentColor.js';
 import fragmentKuwahara from './shaders/fragmentKuwahara.js';
 import fragmentBlur from './shaders/fragmentBlur.js';
+import fragmentNoise from './shaders/fragmentNoise.js';
 
 export default class Output {
   constructor(_options = {}) {
@@ -27,6 +28,10 @@ export default class Output {
       this.height
     );
     this.renderTargetBlur = new THREE.WebGLRenderTarget(
+      this.width,
+      this.height
+    );
+    this.renderTargetNoise = new THREE.WebGLRenderTarget(
       this.width,
       this.height
     );
@@ -112,6 +117,19 @@ export default class Output {
       transparent: true,
     });
 
+    // Noise Shader
+    this.noiseMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uTexture: { value: this.renderTargetBlur.texture }, // Will be set to Kuwahara render target's texture}
+        uResolution: { value: new THREE.Vector2(this.width, this.height) },
+        uTime: { value: 0.0 },
+        uNoise: { value: 0.0 },
+      },
+      vertexShader: vertex,
+      fragmentShader: fragmentNoise,
+      transparent: true,
+    });
+
     // Color Pass Scene
     this.colorScene = new THREE.Scene();
     const colorQuad = new THREE.Mesh(
@@ -135,6 +153,14 @@ export default class Output {
       this.blurMaterial
     );
     this.blurScene.add(blurQuad);
+
+    // Noise Pass Scene
+    this.noiseScene = new THREE.Scene();
+    const noiseQuad = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      this.noiseMaterial
+    );
+    this.noiseScene.add(noiseQuad);
 
     // Final Output Scene
     this.finalScene = new THREE.Scene();
@@ -202,14 +228,27 @@ export default class Output {
     this.renderer.setRenderTarget(this.renderTargetBlur);
     this.renderer.render(this.blurScene, this.camera);
 
-    // Final Pass: Render the blurred output to the screen
-    this.finalQuad.material.map = this.renderTargetBlur.texture;
+    // Set Kuwahara texture as input for the Blur filter
+    this.noiseMaterial.uniforms.uTexture.value = this.renderTargetBlur.texture;
+
+    // Fourth Pass: Noise Filter
+    this.renderer.setRenderTarget(this.renderTargetNoise);
+    this.renderer.render(this.noiseScene, this.camera);
+
+    // Final Pass: Render the noised output to the screen
+    this.finalQuad.material.map = this.renderTargetNoise.texture;
     this.renderer.setRenderTarget(null);
     this.renderer.render(this.finalScene, this.camera);
   }
 
+  handleImageClick(src, index) {
+    // Logic to handle image click
+    console.log(`Image clicked: ${src}, index: ${index}`);
+  }
+
   setDatGUI() {
     this.gui = new GUI();
+
     this.filters = this.gui.addFolder('Filters');
     this.filters
       .add(this.kuwaharaMaterial.uniforms.uKuwahara, 'value', 0, 10)
@@ -218,6 +257,12 @@ export default class Output {
     this.filters
       .add(this.blurMaterial.uniforms.uBlurAmount, 'value', 0, 10)
       .name('Blur')
+      .listen();
+
+    this.noise = this.gui.addFolder('Noise');
+    this.noise
+      .add(this.noiseMaterial.uniforms.uNoise, 'value', 0, 50)
+      .name('Noise')
       .listen();
   }
 
@@ -240,6 +285,8 @@ export default class Output {
 
       // Apply filters and render to the screen
       this.applyFilters();
+
+      this.noiseMaterial.uniforms.uTime.value += 0.005;
 
       // Update OrbitControls
       if (this.orbitControls) {

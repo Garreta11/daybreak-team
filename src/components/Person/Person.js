@@ -1,24 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './Person.module.scss';
-import Sketch from './Sketch'; // Adjust the import path as necessary
 import Output from './Output.js';
 
 const Person = ({ imgs }) => {
   const containerRef = useRef(null);
+  const outputRef = useRef(null);
 
   const [activeButtons, setActiveButtons] = useState(true);
 
   useEffect(() => {
     // Initialize Experience
-    /* const experience = new Sketch({
-      targetElement: containerRef.current,
-      images: imgs,
-    }); */
-    const webgl = new Output({
+    outputRef.current = new Output({
       targetElement: containerRef.current,
       images: imgs,
     });
   }, []);
+
+  const handleImage = (src, index) => {
+    // Call a method from the Output instance when an image is clicked
+    if (outputRef.current) {
+      outputRef.current.handleImageClick(src, index); // Replace with your desired method
+    }
+  };
 
   return (
     <>
@@ -33,6 +36,7 @@ const Person = ({ imgs }) => {
             <div key={index} className={styles.images__item}>
               <img
                 className={styles.images__item__img}
+                onClick={() => handleImage(img.src, index)}
                 src={img.src}
                 alt={index}
               />
