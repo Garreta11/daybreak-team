@@ -147,7 +147,7 @@ export default class Output {
         uTexture: { value: this.renderTargetBlur.texture }, // Will be set to Blur render target's texture}
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
         uTime: { value: 0.0 },
-        uNoise: { value: 2.0 },
+        uNoise: { value: 4.6 },
         uOffset: { value: 0.0 },
       },
       vertexShader: vertex,
@@ -387,13 +387,9 @@ export default class Output {
 
     this.tl = gsap.timeline();
 
-    /* this.tl.to(this.noiseMaterial.uniforms.uNoise, {
-      value: 2,
-      duration: 1,
-    }); */
     this.tl.to(this.noiseMaterial.uniforms.uOffset, {
       value: 1,
-      duration: 0.5,
+      duration: 0.8,
       ease: 'power4.in',
 
       onComplete: () => {
@@ -420,11 +416,11 @@ export default class Output {
         this.colorMaterial.uniforms.uColorsArray.value = colors;
       },
     });
-    this.tl.to(this.noiseMaterial.uniforms.uNoise, {
+    /* this.tl.to(this.noiseMaterial.uniforms.uNoise, {
       value: 0,
       duration: 0.8,
       ease: 'power1.out',
-    });
+    }); */
   }
 
   setDatGUI() {
