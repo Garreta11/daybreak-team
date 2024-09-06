@@ -178,7 +178,8 @@ export default class Output {
         uTexture: { value: null }, // Will be set to Mouse render target's texture}
         uPrevTexture: { value: this.renderTargetMouse.texture },
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
-        uOpacity: { value: 0.98 },
+        uOpacity: { value: 0.005 },
+        uDisplacement: { value: 22 },
       },
       vertexShader: vertex,
       fragmentShader: fragmentFeedback,
@@ -419,8 +420,14 @@ export default class Output {
       .name('Blur')
       .listen();
     this.filters
-      .add(this.feedbackMaterial.uniforms.uOpacity, 'value', 0, 1)
+      .add(this.feedbackMaterial.uniforms.uOpacity, 'value', 0.0001, 0.01)
+      .step(0.0001)
       .name('Feedback Opacity')
+      .listen();
+    this.filters
+      .add(this.feedbackMaterial.uniforms.uDisplacement, 'value', 0.1, 100)
+      .step(0.0001)
+      .name('Feedback Displacement')
       .listen();
 
     // Noise

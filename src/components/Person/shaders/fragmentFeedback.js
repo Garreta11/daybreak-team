@@ -7,6 +7,7 @@ const fragmentShader = glsl`
 
   uniform sampler2D uPrevTexture;
   uniform sampler2D uTexture;
+  uniform float uDisplacement;
   uniform float uOpacity;
   uniform vec2 uResolution;
   varying vec2 vUv;
@@ -78,7 +79,7 @@ const fragmentShader = glsl`
     vec4 color = texture2D(uTexture, vUv);
 
     vec2 aspect = vec2(1., uResolution.y / uResolution.x);
-    vec2 disp = fbm(vUv * 22.0, 4) * aspect * 0.005;
+    vec2 disp = fbm(vUv * uDisplacement, 4) * aspect * uOpacity;
 
     vec4 texel = texture2D(uPrevTexture, vUv);
     vec4 texel2 = texture2D(uPrevTexture, vec2(vUv.x + disp.x, vUv.y));
