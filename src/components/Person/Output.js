@@ -58,7 +58,7 @@ export default class Output {
     this.setupPipeline();
 
     this.setDatGUI();
-    this.setOrbitControls();
+    // this.setOrbitControls();
 
     /**
      * Events Listeners
@@ -147,7 +147,7 @@ export default class Output {
         uTexture: { value: this.renderTargetBlur.texture }, // Will be set to Blur render target's texture}
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
         uTime: { value: 0.0 },
-        uNoise: { value: 0.0 },
+        uNoise: { value: 2.0 },
         uOffset: { value: 0.0 },
       },
       vertexShader: vertex,
@@ -161,7 +161,7 @@ export default class Output {
         uTexture: { value: this.renderTargetNoise.texture }, // Will be set to Noise render target's texture}
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
         uTime: { value: 0.0 },
-        uMouse: { value: new THREE.Vector2(0, 0) },
+        uMouse: { value: new THREE.Vector2(this.width / 2, this.height / 2) },
         uPullRadius: { value: 0.2 },
         uPullStrengthCenter: { value: 0.05 },
         uPullStrengthEdge: { value: 0.1 },
@@ -175,7 +175,7 @@ export default class Output {
     // Feedback Shader
     this.feedbackMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        uTexture: { value: null }, // Will be set to Mouse render target's texture}
+        uTexture: { value: this.renderTargetMouse.texture }, // Will be set to Mouse render target's texture}
         uPrevTexture: { value: this.renderTargetMouse.texture },
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
         uOpacity: { value: 0.005 },
@@ -371,6 +371,7 @@ export default class Output {
     /**
      * Final Pass: Render the feedback output to the screen
      */
+    //this.finalQuad.material.map = this.renderTargetBlur.texture;
     this.finalQuad.material.map = this.renderTargetFeedbackA.texture;
     this.renderer.setRenderTarget(null);
     this.renderer.render(this.finalScene, this.camera);
@@ -383,17 +384,18 @@ export default class Output {
   handleImageClick(src, index) {
     // Change Texture to display
     this.texture = new THREE.TextureLoader().load(src);
-    gsap.to(this.noiseMaterial.uniforms.uNoise, {
-      value: 14,
+
+    this.tl = gsap.timeline();
+
+    /* this.tl.to(this.noiseMaterial.uniforms.uNoise, {
+      value: 2,
       duration: 1,
-      yoyo: true,
-      repeat: 1, // Play forward, then reverse once
-    });
-    gsap.to(this.noiseMaterial.uniforms.uOffset, {
+    }); */
+    this.tl.to(this.noiseMaterial.uniforms.uOffset, {
       value: 1,
-      duration: 1,
-      yoyo: true,
-      repeat: 1, // Play forward, then reverse once
+      duration: 0.5,
+      ease: 'power4.in',
+
       onComplete: () => {
         this.colorMaterial.uniforms.uTexture.value = this.texture;
 
@@ -403,6 +405,25 @@ export default class Output {
         );
         this.colorMaterial.uniforms.uColorsArray.value = colors;
       },
+    });
+    this.tl.to(this.noiseMaterial.uniforms.uOffset, {
+      value: 0,
+      duration: 0.8,
+      ease: 'power1.out',
+      onComplete: () => {
+        this.colorMaterial.uniforms.uTexture.value = this.texture;
+
+        // Change Colors to display
+        const colors = this.images[index].colors.map(
+          (color) => new THREE.Color(color)
+        );
+        this.colorMaterial.uniforms.uColorsArray.value = colors;
+      },
+    });
+    this.tl.to(this.noiseMaterial.uniforms.uNoise, {
+      value: 0,
+      duration: 0.8,
+      ease: 'power1.out',
     });
   }
 
@@ -432,6 +453,10 @@ export default class Output {
 
     // Noise
     this.noise = this.gui.addFolder('Noise');
+    this.noise
+      .add(this.noiseMaterial.uniforms.uOffset, 'value', 0, 1)
+      .name('Offset')
+      .listen();
     this.noise
       .add(this.noiseMaterial.uniforms.uNoise, 'value', 0, 50)
       .name('Noise')

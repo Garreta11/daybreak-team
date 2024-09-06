@@ -93,9 +93,7 @@ const fragmentShader = glsl`
     floodcolor = blendDarken(floodcolor, texel4);
     floodcolor = blendDarken(floodcolor, texel5);
 
-    // vec4 waterColor = blendDarken(prevColor, floodcolor*(1. + 0.02), uOpacity);
-
-    // gl_FragColor = vec4(waterColor, 1.);
+    vec4 waterColor = blendDarken(prevColor, floodcolor*(1. + 0.02), uOpacity);
     
     // gl_FragColor = mix(color, waterColor, uOpacity);
     gl_FragColor = max(color, floodcolor);

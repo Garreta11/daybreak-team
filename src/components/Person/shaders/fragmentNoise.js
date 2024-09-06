@@ -3,8 +3,6 @@ import glsl from 'glslify';
 // src/shaders/fragment.js
 const fragmentShader = glsl`
 
-  #define NUM_OCTAVES 5
-
   uniform sampler2D uTexture;
   uniform float uTime;
   uniform float uNoise;
@@ -28,13 +26,13 @@ const fragmentShader = glsl`
     return res*res;
   }
 
-  float fbm(vec2 x) {
+  float fbm(vec2 x, int numOctaves) {
     float v = 0.0;
     float a = 0.5;
     vec2 shift = vec2(100);
     // Rotate to reduce axial bias
       mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.50));
-    for (int i = 0; i < NUM_OCTAVES; ++i) {
+    for (int i = 0; i < numOctaves; ++i) {
       v += a * noise(x);
       x = rot * x * 2.0 + shift;
       a *= 0.5;
@@ -42,20 +40,37 @@ const fragmentShader = glsl`
     return v;
   }
 
+  float blendDarken(float base, float blend) {
+    return min(blend, base);
+  }
+
+  vec2 blendDarken(vec2 base, vec2 blend) {
+    return vec2(blendDarken(base.x, blend.x), blendDarken(base.y, blend.y));
+  }
+
   void main() {
 
     // Apply FBM for WaterColor Effect
+    vec2 aspect = vec2(1., uResolution.y / uResolution.x);
+    vec2 disp = fbm(vUv * uNoise, 4) * aspect * 1.0;
+
     vec2 st = vUv;
-    vec2 q = vec2(0.);
-    q.x = fbm( st + 0.00*uTime);
-    q.y = fbm( st + vec2(1.0));
-    vec2 r = vec2(0.);
-    r.x = fbm( st + 1.0*q + vec2(1.7,9.2)+ 0.15*uTime );
-    r.y = fbm( st + 1.0*q + vec2(8.3,2.8)+ 0.126*uTime);
-    float n = fbm(st * uNoise + r + uTime);
+    vec2 st2 = vec2(vUv.x + disp.x, vUv.y);
+    vec2 st3 = vec2(vUv.x - disp.x, vUv.y);
+    vec2 st4 = vec2(vUv.x, vUv.y + disp.y);
+    vec2 st5 = vec2(vUv.x, vUv.y - disp.y);
+
+    vec2 floodcolor = st;
+    floodcolor = blendDarken(floodcolor, st2);
+    floodcolor = blendDarken(floodcolor, st3);
+    floodcolor = blendDarken(floodcolor, st4);
+    floodcolor = blendDarken(floodcolor, st5);
+
+    float n = fbm(floodcolor * uNoise + uTime, 4);
 
     vec2 centeredUv = vUv - vec2(0.5);
-    vec2 offset = centeredUv * (n * 0.3 + 1.0);
+    // vec2 offset = centeredUv * (n * 0.3 + 1.0);
+    vec2 offset = centeredUv * (n * 0.9);
     offset += vec2(0.5);
 
     vec2 newUv = mix(st, offset, uOffset);

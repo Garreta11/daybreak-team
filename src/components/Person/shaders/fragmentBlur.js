@@ -26,7 +26,7 @@ void main() {
         }
     }
     
-    gl_FragColor = vec4(finalColor.rgb / totalWeight, color.a);
+    gl_FragColor = vec4(finalColor / totalWeight);
 }
 `;
 export default fragmentShader;
