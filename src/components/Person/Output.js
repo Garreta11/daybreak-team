@@ -165,7 +165,7 @@ export default class Output {
         uPullRadius: { value: 0.2 },
         uPullStrengthCenter: { value: 0.05 },
         uPullStrengthEdge: { value: 0.1 },
-        uImageScale: { value: 0.9 },
+        uImageScale: { value: 1.0 },
       },
       vertexShader: vertex,
       fragmentShader: fragmentMouse,
@@ -178,7 +178,7 @@ export default class Output {
         uTexture: { value: null }, // Will be set to Mouse render target's texture}
         uPrevTexture: { value: this.renderTargetMouse.texture },
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
-        uOpacity: { value: 0.8 },
+        uOpacity: { value: 0.98 },
       },
       vertexShader: vertex,
       fragmentShader: fragmentFeedback,
