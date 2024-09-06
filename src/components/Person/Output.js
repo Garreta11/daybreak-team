@@ -10,6 +10,8 @@ import fragmentColor from './shaders/fragmentColor.js';
 import fragmentKuwahara from './shaders/fragmentKuwahara.js';
 import fragmentBlur from './shaders/fragmentBlur.js';
 import fragmentNoise from './shaders/fragmentNoise.js';
+import fragmentMouse from './shaders/fragmentMouse.js';
+import fragmentFeedback from './shaders/fragmentFeedback.js';
 
 export default class Output {
   constructor(_options = {}) {
@@ -36,6 +38,18 @@ export default class Output {
       this.width,
       this.height
     );
+    this.renderTargetMouse = new THREE.WebGLRenderTarget(
+      this.width,
+      this.height
+    );
+    this.renderTargetFeedbackA = new THREE.WebGLRenderTarget(
+      this.width,
+      this.height
+    );
+    this.renderTargetFeedbackB = new THREE.WebGLRenderTarget(
+      this.width,
+      this.height
+    );
 
     this.setStats();
     this.setScene();
@@ -46,7 +60,14 @@ export default class Output {
     this.setDatGUI();
     this.setOrbitControls();
 
+    /**
+     * Events Listeners
+     */
     window.addEventListener('resize', this.onResize.bind(this));
+    window.addEventListener('mousemove', this.onMouseMove.bind(this));
+    window.addEventListener('touchmove', this.onTouchMove.bind(this));
+    window.addEventListener('touchstart', this.onTouchStart.bind(this));
+
     this.update();
   }
 
@@ -71,12 +92,15 @@ export default class Output {
   }
 
   setupPipeline() {
-    // Load texture
+    // Load first image and get colors array
     this.texture = new THREE.TextureLoader().load(this.images[0].src);
-
     const colors = this.images[0].colors.map((color) => new THREE.Color(color));
 
     this.aspectratio = this.width / this.height;
+
+    /**
+     * SHADERS
+     */
 
     // Color Shader
     this.colorMaterial = new THREE.ShaderMaterial({
@@ -120,7 +144,7 @@ export default class Output {
     // Noise Shader
     this.noiseMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        uTexture: { value: this.renderTargetBlur.texture }, // Will be set to Kuwahara render target's texture}
+        uTexture: { value: this.renderTargetBlur.texture }, // Will be set to Blur render target's texture}
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
         uTime: { value: 0.0 },
         uNoise: { value: 0.0 },
@@ -130,6 +154,40 @@ export default class Output {
       fragmentShader: fragmentNoise,
       transparent: true,
     });
+
+    // Mouse Shader
+    this.mouseMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uTexture: { value: this.renderTargetNoise.texture }, // Will be set to Noise render target's texture}
+        uResolution: { value: new THREE.Vector2(this.width, this.height) },
+        uTime: { value: 0.0 },
+        uMouse: { value: new THREE.Vector2(0, 0) },
+        uPullRadius: { value: 0.2 },
+        uPullStrengthCenter: { value: 0.05 },
+        uPullStrengthEdge: { value: 0.1 },
+        uImageScale: { value: 0.9 },
+      },
+      vertexShader: vertex,
+      fragmentShader: fragmentMouse,
+      transparent: true,
+    });
+
+    // Feedback Shader
+    this.feedbackMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uTexture: { value: null }, // Will be set to Mouse render target's texture}
+        uPrevTexture: { value: this.renderTargetMouse.texture },
+        uResolution: { value: new THREE.Vector2(this.width, this.height) },
+        uOpacity: { value: 0.8 },
+      },
+      vertexShader: vertex,
+      fragmentShader: fragmentFeedback,
+      transparent: true,
+    });
+
+    /**
+     * SCENES
+     */
 
     // Color Pass Scene
     this.colorScene = new THREE.Scene();
@@ -162,6 +220,22 @@ export default class Output {
       this.noiseMaterial
     );
     this.noiseScene.add(noiseQuad);
+
+    // Mouse Pass Scene
+    this.mouseScene = new THREE.Scene();
+    const mouseQuad = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      this.mouseMaterial
+    );
+    this.mouseScene.add(mouseQuad);
+
+    // Feedback Pass Scene
+    this.feedbackScene = new THREE.Scene();
+    const feedbackQuad = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      this.feedbackMaterial
+    );
+    this.feedbackScene.add(feedbackQuad);
 
     // Final Output Scene
     this.finalScene = new THREE.Scene();
@@ -208,8 +282,37 @@ export default class Output {
     finalQuad.geometry = new THREE.PlaneGeometry(2, 2);
   }
 
+  onMouseMove(e) {
+    this.mouseMaterial.uniforms.uMouse.value = new THREE.Vector2(
+      e.clientX,
+      e.clientY
+    );
+  }
+
+  onTouchMove(event) {
+    if (event.touches.length > 0) {
+      const touch = event.touches[0];
+      this.mouseMaterial.uniforms.uMouse.value = new THREE.Vector2(
+        touch.clientX,
+        touch.clientY
+      );
+    }
+  }
+
+  onTouchStart(event) {
+    if (event.touches.length > 0) {
+      const touch = event.touches[0];
+      this.mouseMaterial.uniforms.uMouse.value = new THREE.Vector2(
+        touch.clientX,
+        touch.clientY
+      );
+    }
+  }
+
   applyFilters() {
-    // First Pass: Color Shader
+    /**
+     * 1st Pass: Color Shader
+     */
     this.renderer.setRenderTarget(this.renderTargetColor);
     this.renderer.render(this.colorScene, this.camera);
 
@@ -217,7 +320,9 @@ export default class Output {
     this.kuwaharaMaterial.uniforms.uTexture.value =
       this.renderTargetColor.texture;
 
-    // Second Pass: Kuwahara Filter
+    /**
+     * 2nd Pass: Kuwahara Filter
+     */
     this.renderer.setRenderTarget(this.renderTargetKuwahara);
     this.renderer.render(this.kuwaharaScene, this.camera);
 
@@ -225,24 +330,58 @@ export default class Output {
     this.blurMaterial.uniforms.uTexture.value =
       this.renderTargetKuwahara.texture;
 
-    // Third Pass: Blur Filter
+    /**
+     * 3rd Pass: Blur Filter
+     */
     this.renderer.setRenderTarget(this.renderTargetBlur);
     this.renderer.render(this.blurScene, this.camera);
 
-    // Set Kuwahara texture as input for the Blur filter
+    // Set Blur texture as input for the Noise filter
     this.noiseMaterial.uniforms.uTexture.value = this.renderTargetBlur.texture;
 
-    // Fourth Pass: Noise Filter
+    /**
+     * 4th Pass: Noise Filter
+     */
     this.renderer.setRenderTarget(this.renderTargetNoise);
     this.renderer.render(this.noiseScene, this.camera);
 
-    // Final Pass: Render the noised output to the screen
-    this.finalQuad.material.map = this.renderTargetNoise.texture;
+    // Set Noise texture as input for the Mouse filter
+    this.mouseMaterial.uniforms.uTexture.value = this.renderTargetNoise.texture;
+
+    /**
+     * 5th Pass: Mouse Filter
+     */
+    this.renderer.setRenderTarget(this.renderTargetMouse);
+    this.renderer.render(this.mouseScene, this.camera);
+
+    // Set Mouse texture as input for the Feedback filter
+    this.feedbackMaterial.uniforms.uTexture.value =
+      this.renderTargetMouse.texture;
+
+    /**
+     * 6th Pass: Feedback Filter
+     */
+    this.renderer.setRenderTarget(this.renderTargetFeedbackA);
+    this.renderer.render(this.feedbackScene, this.camera);
+
+    this.feedbackMaterial.uniforms.uPrevTexture.value =
+      this.renderTargetFeedbackA.texture;
+
+    /**
+     * Final Pass: Render the feedback output to the screen
+     */
+    this.finalQuad.material.map = this.renderTargetFeedbackA.texture;
     this.renderer.setRenderTarget(null);
     this.renderer.render(this.finalScene, this.camera);
+
+    let temp = this.renderTargetFeedbackA;
+    this.renderTargetFeedbackA = this.renderTargetFeedbackB;
+    this.renderTargetFeedbackB = temp;
   }
 
   handleImageClick(src, index) {
+    // Change Texture to display
+    this.texture = new THREE.TextureLoader().load(src);
     gsap.to(this.noiseMaterial.uniforms.uNoise, {
       value: 14,
       duration: 1,
@@ -255,8 +394,6 @@ export default class Output {
       yoyo: true,
       repeat: 1, // Play forward, then reverse once
       onComplete: () => {
-        // Change Texture to display
-        this.texture = new THREE.TextureLoader().load(src);
         this.colorMaterial.uniforms.uTexture.value = this.texture;
 
         // Change Colors to display
@@ -271,6 +408,7 @@ export default class Output {
   setDatGUI() {
     this.gui = new GUI();
 
+    // Filters
     this.filters = this.gui.addFolder('Filters');
     this.filters
       .add(this.kuwaharaMaterial.uniforms.uKuwahara, 'value', 0, 10)
@@ -280,11 +418,35 @@ export default class Output {
       .add(this.blurMaterial.uniforms.uBlurAmount, 'value', 0, 10)
       .name('Blur')
       .listen();
+    this.filters
+      .add(this.feedbackMaterial.uniforms.uOpacity, 'value', 0, 1)
+      .name('Feedback Opacity')
+      .listen();
 
+    // Noise
     this.noise = this.gui.addFolder('Noise');
     this.noise
       .add(this.noiseMaterial.uniforms.uNoise, 'value', 0, 50)
       .name('Noise')
+      .listen();
+
+    // Mouse
+    this.mouse = this.gui.addFolder('Mouse');
+    this.mouse
+      .add(this.mouseMaterial.uniforms.uPullRadius, 'value', 0, 1)
+      .name('Pull Radius')
+      .listen();
+    this.mouse
+      .add(this.mouseMaterial.uniforms.uPullStrengthCenter, 'value', 0, 1)
+      .name('Pull Strength Center')
+      .listen();
+    this.mouse
+      .add(this.mouseMaterial.uniforms.uPullStrengthEdge, 'value', 0, 1)
+      .name('Pull Strength Edge')
+      .listen();
+    this.mouse
+      .add(this.mouseMaterial.uniforms.uImageScale, 'value', 0, 1)
+      .name('Image Scale')
       .listen();
   }
 
