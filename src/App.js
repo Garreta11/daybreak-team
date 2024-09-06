@@ -33,7 +33,13 @@ function App() {
 
   return (
     <div className='App' id='app'>
+      <div
+        style={{ backgroundColor: 'red', width: '100vw', height: '100vh' }}
+      ></div>
       <Person imgs={images} />
+      <div
+        style={{ backgroundColor: 'red', width: '100vw', height: '100vh' }}
+      ></div>
     </div>
   );
 }

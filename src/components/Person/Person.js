@@ -24,7 +24,7 @@ const Person = ({ imgs }) => {
   };
 
   return (
-    <>
+    <div style={{ position: 'relative' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       <div
         className={`${styles.images} ${
@@ -44,7 +44,7 @@ const Person = ({ imgs }) => {
           );
         })}
       </div>
-    </>
+    </div>
   );
 };
 

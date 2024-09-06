@@ -147,6 +147,7 @@ export default class Output {
         uTexture: { value: this.renderTargetBlur.texture }, // Will be set to Blur render target's texture}
         uResolution: { value: new THREE.Vector2(this.width, this.height) },
         uTime: { value: 0.0 },
+        uAmplitude: { value: 0.1 },
         uNoise: { value: 4.6 },
         uOffset: { value: 0.0 },
       },
@@ -164,7 +165,7 @@ export default class Output {
         uMouse: { value: new THREE.Vector2(this.width / 2, this.height / 2) },
         uPullRadius: { value: 0.2 },
         uPullStrengthCenter: { value: 0.05 },
-        uPullStrengthEdge: { value: 0.1 },
+        uPullStrengthEdge: { value: 0.01 },
         uImageScale: { value: 1.0 },
       },
       vertexShader: vertex,
@@ -371,7 +372,7 @@ export default class Output {
     /**
      * Final Pass: Render the feedback output to the screen
      */
-    //this.finalQuad.material.map = this.renderTargetBlur.texture;
+    // this.finalQuad.material.map = this.renderTargetBlur.texture;
     this.finalQuad.material.map = this.renderTargetFeedbackA.texture;
     this.renderer.setRenderTarget(null);
     this.renderer.render(this.finalScene, this.camera);
@@ -452,6 +453,10 @@ export default class Output {
     this.noise
       .add(this.noiseMaterial.uniforms.uOffset, 'value', 0, 1)
       .name('Offset')
+      .listen();
+    this.noise
+      .add(this.noiseMaterial.uniforms.uAmplitude, 'value', 0, 2)
+      .name('Amplitude')
       .listen();
     this.noise
       .add(this.noiseMaterial.uniforms.uNoise, 'value', 0, 50)

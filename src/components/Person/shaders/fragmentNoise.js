@@ -6,6 +6,7 @@ const fragmentShader = glsl`
   uniform sampler2D uTexture;
   uniform float uTime;
   uniform float uNoise;
+  uniform float uAmplitude;
   uniform float uOffset;
   uniform vec2 uResolution;
   varying vec2 vUv;
@@ -52,7 +53,7 @@ const fragmentShader = glsl`
 
     // Apply FBM for WaterColor Effect
     vec2 aspect = vec2(1., uResolution.y / uResolution.x);
-    vec2 disp = fbm(vUv * uNoise, 4) * aspect * 1.0;
+    vec2 disp = uAmplitude * fbm(vUv * uNoise, 4) * aspect * 1.0;
 
     vec2 st = vUv;
     vec2 st2 = vec2(vUv.x + disp.x, vUv.y);
@@ -69,8 +70,8 @@ const fragmentShader = glsl`
     float n = fbm(floodcolor * uNoise + uTime, 4);
 
     vec2 centeredUv = vUv - vec2(0.5);
-    // vec2 offset = centeredUv * (n * 0.3 + 1.0);
-    vec2 offset = centeredUv * (n * 0.9);
+    // vec2 offset = centeredUv * n * 0.9;
+    vec2 offset = centeredUv * n * 10.;
     offset += vec2(0.5);
 
     vec2 newUv = mix(st, offset, uOffset);
